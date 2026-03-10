@@ -333,6 +333,11 @@
         <!-- Internal spa fields -->
         <div class="conditional" id="cond-spa-internal">
           <div class="row">
+            <div class="field"><label>Spa Perimeter (lf)</label><input type="number" id="spaPerimeterInternal" placeholder="0" oninput="recalc()">
+              <div class="hint">Total interior perimeter of the spa — used for interior finish &amp; rebar</div>
+            </div>
+          </div>
+          <div class="row">
             <div class="field"><label>Dam Wall Length (lf)</label><input type="number" id="spaDamWall" placeholder="0" oninput="recalc()">
               <div class="hint">Length of the wall separating spa from pool — tile will be calculated for dam wall face</div>
             </div>
@@ -403,9 +408,6 @@
       </div>
       <div class="row">
         <div class="field"><label>Shotcrete (cubic yards)</label><input type="number" id="shotcreteCY" placeholder="0" step="0.5" oninput="recalc()"></div>
-        <div class="field"><label>Interior Finish (sqft)</label><input type="number" id="interiorSqft" placeholder="0" oninput="recalc()">
-          <div class="hint">Total interior surface area for plaster/pebble (include spa interior if applicable)</div>
-        </div>
       </div>
     </div>
   </div>
@@ -774,7 +776,8 @@
     <div class="sc-header"><span class="sc-icon">&#9733;</span><h3>Other</h3></div>
     <div class="sc-body">
       <div class="settings-row"><span class="sr-label">Auto cover (Cover Care)</span><input type="number" id="set_autoCover" value="18000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Interior finish</span><input type="number" id="set_interiorPerSqft" value="12" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Interior finish (per lf of perimeter)</span><input type="number" id="set_interiorPerLF" value="45" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Depth surcharge (per ft over 6')</span><input type="number" id="set_interiorDepthSurcharge" value="600" step="50" onchange="saveSettings()"><span class="sr-unit">$/ft</span></div>
       <div class="settings-row"><span class="sr-label">Boulder package</span><input type="number" id="set_boulders" value="1200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
       <div class="settings-row"><span class="sr-label">Startup &amp; pool prep</span><input type="number" id="set_startup" value="2000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
       <div class="settings-row"><span class="sr-label">Raised wall (structural + veneer)</span><input type="number" id="set_raisedWall" value="8000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
@@ -961,7 +964,7 @@ function recalc() {
   const lightSpacing = parseInt(document.getElementById('lightSpacing').value) || 6;
   // rebarLF removed — derived from perimeter + spa perimeter below
   const shotcreteCY = v('shotcreteCY');
-  const interiorSqft = v('interiorSqft');
+  // interiorSqft removed — interior finish now based on perimeter LF
   const city = document.getElementById('projectCity').value;
 
   // Calculate number of lights
@@ -973,6 +976,7 @@ function recalc() {
   const spa = spaType();
   const spaActive = spa !== 'none';
   const spaPerim = (spa === 'external_grade' || spa === 'external_raised') ? v('spaPerimeter') : 0;
+  const allSpaPerim = spa === 'internal' ? v('spaPerimeterInternal') : spaPerim;
   const spaGal = (spa === 'external_grade' || spa === 'external_raised') ? v('spaGallons') : 0;
   const damWallLen = spa === 'internal' ? v('spaDamWall') : 0;
   const damWallHt = spa === 'internal' ? (v('spaDamHeight') || 2) : 0;
@@ -1022,7 +1026,7 @@ function recalc() {
   if (s('generalCond') > 0) lines.push({ cat: 'Site Prep', item: 'General Conditions', cost: s('generalCond') });
 
   // 2. Shell
-  const rebarLF = perimeter + spaPerim;
+  const rebarLF = perimeter + allSpaPerim;
   const rebarCost = rebarLF * s('rebarPerLF');
   lines.push({ cat: 'Shell', item: 'Steel / Rebar' + (rebarLF > 0 ? ' (' + rebarLF.toLocaleString() + ' lf)' : ''), cost: rebarCost });
   lines.push({ cat: 'Shell', item: 'Shotcrete' + (shotcreteCY > 0 ? ' (' + shotcreteCY + ' cy)' : ''), cost: shotcreteCY * s('shotcretePerCY') });
@@ -1159,11 +1163,14 @@ function recalc() {
     }
   }
 
-  // 8. Interior
-  if (interiorSqft > 0) {
-    lines.push({ cat: 'Interior', item: 'Interior Finish (' + interiorSqft + ' sqft)', cost: interiorSqft * s('interiorPerSqft') });
-  } else {
-    lines.push({ cat: 'Interior', item: 'Interior Finish', cost: 0 });
+  // 8. Interior — based on pool + spa perimeter LF, with depth surcharge over 6'
+  const interiorLF = perimeter + allSpaPerim;
+  if (interiorLF > 0) {
+    lines.push({ cat: 'Interior', item: 'Interior Finish (' + interiorLF + ' lf)', cost: interiorLF * s('interiorPerLF') });
+  }
+  const deepFt = Math.max(0, (v('depthDeep') || 0) - 6);
+  if (deepFt > 0) {
+    lines.push({ cat: 'Interior', item: 'Depth Surcharge (' + deepFt + ' ft over 6\')', cost: deepFt * s('interiorDepthSurcharge') });
   }
 
   // 9. Boulders
@@ -1378,10 +1385,10 @@ function parseTakeoff(text) {
     data._summary.push({ label: 'Rebar', value: rebar });
   }
 
+  // Interior surface area from takeoff (informational only — interior finish uses perimeter LF)
   const intSqft = extract(/Int Surface Area:\s*([\d,.]+)\s*ft/, poolText);
   if (intSqft) {
-    data.interiorSqft = parseNumber(intSqft);
-    data._summary.push({ label: 'Interior Surface', value: intSqft + ' ft\u00b2' });
+    data._summary.push({ label: 'Interior Surface', value: intSqft + ' ft² (info only)' });
   }
 
   const lights = extract(/Lights:\s*(\d+)/, poolText);
@@ -1542,13 +1549,14 @@ function applyTakeoffData(data) {
   if (data.depthDeep) document.getElementById('depthDeep').value = data.depthDeep;
   if (data.shotcreteCY) document.getElementById('shotcreteCY').value = data.shotcreteCY;
   // Rebar is auto-calculated from pool + spa perimeters, no import needed
-  if (data.interiorSqft) document.getElementById('interiorSqft').value = Math.round(data.interiorSqft);
+  // interiorSqft removed — interior finish now auto-calculated from perimeter
 
   // Spa configuration
   if (data.hasSpa) {
     const spaConfig = document.getElementById('spaConfig');
     if (data.spaType === 'internal') {
       spaConfig.value = 'internal';
+      if (data.spaPerimeter) document.getElementById('spaPerimeterInternal').value = Math.round(data.spaPerimeter);
       if (data.damWallLen) document.getElementById('spaDamWall').value = Math.round(data.damWallLen);
     } else if (data.spaType === 'external_raised') {
       spaConfig.value = 'external_raised';
@@ -1604,13 +1612,13 @@ function getQuoteData() {
     savedAt: new Date().toISOString()
   };
   // Gather dims
-  ['poolPerimeter','poolArea','poolGallons','depthShallow','depthDeep','padDistance','lightSide','lightSpacing','shotcreteCY','interiorSqft'].forEach(id => {
+  ['poolPerimeter','poolArea','poolGallons','depthShallow','depthDeep','padDistance','lightSide','lightSpacing','shotcreteCY'].forEach(id => {
     data.dims[id] = document.getElementById(id)?.value || '';
   });
   // Spa config
   data.spaConfig = document.getElementById('spaConfig').value;
   data.spaDims = {};
-  ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide','spaSpillover','spaSpilloverLen'].forEach(id => {
+  ['spaDamWall','spaDamHeight','spaPerimeter','spaPerimeterInternal','spaGallons','spaRaisedHeight','spaSharedSide','spaSpillover','spaSpilloverLen'].forEach(id => {
     data.spaDims[id] = document.getElementById(id)?.value || '';
   });
   // Gather options
@@ -1648,7 +1656,7 @@ function loadQuoteData(data) {
     document.getElementById('spaConfig').value = 'external_grade';
   }
   if (data.spaDims) {
-    ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide','spaSpillover','spaSpilloverLen'].forEach(id => {
+    ['spaDamWall','spaDamHeight','spaPerimeter','spaPerimeterInternal','spaGallons','spaRaisedHeight','spaSharedSide','spaSpillover','spaSpilloverLen'].forEach(id => {
       const el = document.getElementById(id);
       if (el && data.spaDims[id]) el.value = data.spaDims[id];
     });
