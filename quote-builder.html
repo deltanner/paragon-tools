@@ -970,8 +970,17 @@ function recalc() {
 
   // Calculate number of lights
   const lightCount = lightSideLen > 0 ? Math.max(1, Math.ceil(lightSideLen / lightSpacing)) : 0;
-  // Conduit footage: each light needs a home run to pad (approx) + shared trench
-  const conduitFt = lightCount > 0 ? (padDist * 2 + lightSideLen) : 0;
+  // Conduit: each light gets its own run to pad. Closest light = padDist,
+  // each successive light adds spacing distance along the wall.
+  let conduitFt = 0;
+  if (lightCount === 1) {
+    conduitFt = padDist;
+  } else if (lightCount > 1) {
+    const spacing = lightSideLen / (lightCount - 1);
+    for (let i = 0; i < lightCount; i++) {
+      conduitFt += padDist + (i * spacing);
+    }
+  }
 
   // Spa configuration
   const spa = spaType();
