@@ -321,24 +321,22 @@
             <div class="field"><label>Spa Volume (gallons)</label><input type="number" id="spaGallons" placeholder="0" oninput="recalc()"></div>
           </div>
           <div class="row" style="margin-top:10px;">
-            <div class="field"><label>Spillover to Pool?</label>
+            <div class="field"><label>Spillover</label>
               <select id="spaSpillover" onchange="recalc()">
-                <option value="no">No</option>
-                <option value="yes">Yes</option>
+                <option value="none">No Spillover</option>
+                <option value="open">Open (no coping over spillover)</option>
+                <option value="covered">Covered (coping caps the spillover)</option>
               </select>
-              <div class="hint">Water spills from spa into pool — replaces coping with tile along that edge</div>
+              <div class="hint">Open: coping removed along spillover edge. Covered: coping stays but tile is still needed underneath.</div>
             </div>
           </div>
           <div class="conditional" id="cond-spa-spillover">
             <div class="row">
               <div class="field"><label>Spillover Length (lf)</label><input type="number" id="spaSpilloverLen" placeholder="0" oninput="recalc()">
-                <div class="hint">Length of the spillover edge — this stretch loses coping and gets tile instead</div>
-              </div>
-              <div class="field"><label>Spillover Height (ft)</label><input type="number" id="spaSpilloverHt" placeholder="1" step="0.5" oninput="recalc()">
-                <div class="hint">Height of the spillover face to be tiled</div>
+                <div class="hint">Linear feet of the spillover edge</div>
               </div>
               <div class="field"><label>Spillover Tile Sqft</label><input type="number" id="spaSpilloverSqft" readonly tabindex="-1" style="background:var(--gray-50);color:var(--gray-600)">
-                <div class="hint">Auto-calculated: spillover length × height</div>
+                <div class="hint">Auto-calculated: spillover length × 1 ft (12" wall thickness)</div>
               </div>
             </div>
           </div>
@@ -870,7 +868,7 @@ function enforceRules() {
   document.getElementById('cond-spa-internal').classList.toggle('visible', spa === 'internal');
   document.getElementById('cond-spa-external').classList.toggle('visible', isExternal);
   document.getElementById('cond-spa-raised').classList.toggle('visible', spa === 'external_raised');
-  document.getElementById('cond-spa-spillover').classList.toggle('visible', isExternal && document.getElementById('spaSpillover').value === 'yes');
+  document.getElementById('cond-spa-spillover').classList.toggle('visible', isExternal && document.getElementById('spaSpillover').value !== 'none');
 
   // Water feature conditional panel
   const wfCond = document.getElementById('cond-waterfeature');
@@ -932,11 +930,12 @@ function recalc() {
     document.getElementById('spaVeneerSqft').value = spaVeneer > 0 ? spaVeneer : '';
   }
 
-  // Spillover: reduces coping, adds tile
-  const hasSpillover = (spa === 'external_grade' || spa === 'external_raised') && document.getElementById('spaSpillover').value === 'yes';
+  // Spillover: always 1ft tall (12" wall thickness). Open removes coping; covered keeps coping.
+  const spilloverType = (spa === 'external_grade' || spa === 'external_raised') ? document.getElementById('spaSpillover').value : 'none';
+  const hasSpillover = spilloverType !== 'none';
   const spilloverLen = hasSpillover ? v('spaSpilloverLen') : 0;
-  const spilloverHt = hasSpillover ? (v('spaSpilloverHt') || 1) : 0;
-  const spilloverSqft = Math.round(spilloverLen * spilloverHt);
+  const spilloverSqft = spilloverLen; // length × 1 ft = length
+  const spilloverReducesCoping = spilloverType === 'open'; // covered keeps coping
   if (hasSpillover) {
     document.getElementById('spaSpilloverSqft').value = spilloverSqft > 0 ? spilloverSqft : '';
   }
@@ -1016,13 +1015,14 @@ function recalc() {
     lines.push({ cat: 'Tile/Coping', item: 'Dam Wall Tile Labor (' + damTileSqft + ' sqft)', cost: damTileSqft * s('damWallTileLabor') });
   }
 
-  // Total coping perimeter: pool + spa perimeter − spillover (spillover replaces coping with tile)
+  // Total coping perimeter: pool + spa − spillover (only if open; covered keeps coping)
   const copingPerimeterRaw = perimeter + spaPerim;
-  const copingPerimeter = Math.max(0, copingPerimeterRaw - spilloverLen);
+  const copingDeduct = spilloverReducesCoping ? spilloverLen : 0;
+  const copingPerimeter = Math.max(0, copingPerimeterRaw - copingDeduct);
   const copingType = document.getElementById('copingType').value;
   let copingLabel = '';
-  if (spaPerim > 0 && spilloverLen > 0) {
-    copingLabel = ' (pool ' + perimeter + ' + spa ' + spaPerim + ' − spillover ' + spilloverLen + ' = ' + copingPerimeter + ' lf)';
+  if (spaPerim > 0 && copingDeduct > 0) {
+    copingLabel = ' (pool ' + perimeter + ' + spa ' + spaPerim + ' − spillover ' + copingDeduct + ' = ' + copingPerimeter + ' lf)';
   } else if (spaPerim > 0) {
     copingLabel = ' (pool ' + perimeter + ' + spa ' + spaPerim + ' = ' + copingPerimeter + ' lf)';
   } else if (perimeter > 0) {
@@ -1161,7 +1161,7 @@ function getQuoteData() {
   // Spa config
   data.spaConfig = document.getElementById('spaConfig').value;
   data.spaDims = {};
-  ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide','spaSpillover','spaSpilloverLen','spaSpilloverHt'].forEach(id => {
+  ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide','spaSpillover','spaSpilloverLen'].forEach(id => {
     data.spaDims[id] = document.getElementById(id)?.value || '';
   });
   // Gather options
@@ -1199,7 +1199,7 @@ function loadQuoteData(data) {
     document.getElementById('spaConfig').value = 'external_grade';
   }
   if (data.spaDims) {
-    ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide','spaSpillover','spaSpilloverLen','spaSpilloverHt'].forEach(id => {
+    ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide','spaSpillover','spaSpilloverLen'].forEach(id => {
       const el = document.getElementById(id);
       if (el && data.spaDims[id]) el.value = data.spaDims[id];
     });
