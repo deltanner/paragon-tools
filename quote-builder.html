@@ -324,8 +324,14 @@
         <!-- Raised external spa fields -->
         <div class="conditional" id="cond-spa-raised">
           <div class="row">
-            <div class="field"><label>Spa Exterior Veneer (sqft)</label><input type="number" id="spaVeneerSqft" placeholder="0" oninput="recalc()">
-              <div class="hint">Exterior vertical surface area of raised spa for stone/tile veneer</div>
+            <div class="field"><label>Raised Height (ft)</label><input type="number" id="spaRaisedHeight" placeholder="1.5" step="0.5" oninput="recalc()">
+              <div class="hint">Height of the raised spa above grade</div>
+            </div>
+            <div class="field"><label>Side Shared w/ Pool (lf)</label><input type="number" id="spaSharedSide" placeholder="0" oninput="recalc()">
+              <div class="hint">Length of the spa side that touches/faces the pool (no veneer on this side)</div>
+            </div>
+            <div class="field"><label>Veneer Sqft</label><input type="number" id="spaVeneerSqft" readonly tabindex="-1" style="background:var(--gray-50);color:var(--gray-600)">
+              <div class="hint">Auto-calculated: (spa perimeter − shared side) × raised height</div>
             </div>
           </div>
         </div>
@@ -891,7 +897,14 @@ function recalc() {
   const spaGal = (spa === 'external_grade' || spa === 'external_raised') ? v('spaGallons') : 0;
   const damWallLen = spa === 'internal' ? v('spaDamWall') : 0;
   const damWallHt = spa === 'internal' ? (v('spaDamHeight') || 2) : 0;
-  const spaVeneer = spa === 'external_raised' ? v('spaVeneerSqft') : 0;
+  // Calculate raised spa veneer sqft: (perimeter - shared side) × raised height
+  let spaVeneer = 0;
+  if (spa === 'external_raised' && spaPerim > 0) {
+    const raisedHt = v('spaRaisedHeight') || 1.5;
+    const sharedSide = v('spaSharedSide') || 0;
+    spaVeneer = Math.round(Math.max(0, spaPerim - sharedSide) * raisedHt);
+    document.getElementById('spaVeneerSqft').value = spaVeneer > 0 ? spaVeneer : '';
+  }
 
   // Number of valves needed
   let valveCount = 0;
@@ -1099,7 +1112,7 @@ function getQuoteData() {
   // Spa config
   data.spaConfig = document.getElementById('spaConfig').value;
   data.spaDims = {};
-  ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaVeneerSqft'].forEach(id => {
+  ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide'].forEach(id => {
     data.spaDims[id] = document.getElementById(id)?.value || '';
   });
   // Gather options
@@ -1137,7 +1150,7 @@ function loadQuoteData(data) {
     document.getElementById('spaConfig').value = 'external_grade';
   }
   if (data.spaDims) {
-    ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaVeneerSqft'].forEach(id => {
+    ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide'].forEach(id => {
       const el = document.getElementById(id);
       if (el && data.spaDims[id]) el.value = data.spaDims[id];
     });
