@@ -395,9 +395,6 @@
         </div>
       </div>
       <div class="row">
-        <div class="field"><label>Rebar (lf)</label><input type="number" id="rebarLF" placeholder="0" min="0" oninput="recalc()">
-          <div class="hint">Total linear feet of rebar from your rebar supplier</div>
-        </div>
         <div class="field"><label>Shotcrete (cubic yards)</label><input type="number" id="shotcreteCY" placeholder="0" step="0.5" oninput="recalc()"></div>
         <div class="field"><label>Interior Finish (sqft)</label><input type="number" id="interiorSqft" placeholder="0" oninput="recalc()">
           <div class="hint">Total interior surface area for plaster/pebble (include spa interior if applicable)</div>
@@ -941,7 +938,7 @@ function recalc() {
   const padDist = v('padDistance');
   const lightSideLen = v('lightSide');
   const lightSpacing = parseInt(document.getElementById('lightSpacing').value) || 6;
-  const rebarLF = v('rebarLF');
+  // rebarLF removed — derived from perimeter + spa perimeter below
   const shotcreteCY = v('shotcreteCY');
   const interiorSqft = v('interiorSqft');
   const city = document.getElementById('projectCity').value;
@@ -998,6 +995,7 @@ function recalc() {
   if (s('generalCond') > 0) lines.push({ cat: 'Site Prep', item: 'General Conditions', cost: s('generalCond') });
 
   // 2. Shell
+  const rebarLF = perimeter + spaPerim;
   const rebarCost = rebarLF * s('rebarPerLF');
   lines.push({ cat: 'Shell', item: 'Steel / Rebar' + (rebarLF > 0 ? ' (' + rebarLF.toLocaleString() + ' lf)' : ''), cost: rebarCost });
   lines.push({ cat: 'Shell', item: 'Shotcrete Labor' + (shotcreteCY > 0 ? ' (' + shotcreteCY + ' cy)' : ''), cost: shotcreteCY * s('shotcretePerCY') });
@@ -1487,7 +1485,7 @@ function applyTakeoffData(data) {
   if (data.depthShallow) document.getElementById('depthShallow').value = data.depthShallow;
   if (data.depthDeep) document.getElementById('depthDeep').value = data.depthDeep;
   if (data.shotcreteCY) document.getElementById('shotcreteCY').value = data.shotcreteCY;
-  if (data.rebarFt) document.getElementById('rebarLF').value = Math.round(data.rebarFt);
+  // Rebar is auto-calculated from pool + spa perimeters, no import needed
   if (data.interiorSqft) document.getElementById('interiorSqft').value = Math.round(data.interiorSqft);
 
   // Spa configuration
@@ -1550,7 +1548,7 @@ function getQuoteData() {
     savedAt: new Date().toISOString()
   };
   // Gather dims
-  ['poolPerimeter','poolArea','poolGallons','depthShallow','depthDeep','padDistance','lightSide','lightSpacing','rebarLF','shotcreteCY','interiorSqft'].forEach(id => {
+  ['poolPerimeter','poolArea','poolGallons','depthShallow','depthDeep','padDistance','lightSide','lightSpacing','shotcreteCY','interiorSqft'].forEach(id => {
     data.dims[id] = document.getElementById(id)?.value || '';
   });
   // Spa config
