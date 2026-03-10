@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paragon Pools — Engineering Tools</title>
+<style>
+  :root {
+    --gold: #CC9933;
+    --gold-dark: #a67a2a;
+    --gold-light: #faf3e6;
+    --gold-lighter: #fdf8f0;
+    --black: #1a1a1a;
+    --charcoal: #2d2d2d;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-300: #dadce0;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--gray-100); color: var(--gray-900); line-height: 1.5; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* === SHARED NAV BAR === */
+  .topnav { background: var(--black); padding: 10px 32px; display: flex; align-items: center; gap: 16px; border-bottom: 2px solid var(--gold); }
+  .topnav a.nav-home { display: flex; align-items: center; gap: 10px; text-decoration: none; color: white; font-size: 14px; font-weight: 600; letter-spacing: 0.3px; transition: color 0.2s; }
+  .topnav a.nav-home:hover { color: var(--gold); }
+  .topnav .nav-logo { height: 28px; width: auto; }
+  .topnav .nav-sep { color: #555; font-size: 18px; }
+  .topnav .nav-current { color: var(--gold); font-size: 13px; font-weight: 500; }
+
+  /* === HERO HEADER === */
+  .hero { background: var(--black); padding: 60px 32px 50px; text-align: center; }
+  .hero-logo { height: 90px; width: auto; margin-bottom: 20px; }
+  .hero h1 { color: white; font-size: 26px; font-weight: 600; letter-spacing: 1px; margin-bottom: 6px; }
+  .hero p { color: var(--gold); font-size: 15px; font-weight: 400; letter-spacing: 0.3px; }
+  .hero-rule { width: 80px; height: 2px; background: var(--gold); margin: 18px auto 0; border: none; }
+
+  /* === TOOLS GRID === */
+  .container { max-width: 1000px; margin: 0 auto; padding: 40px 20px 60px; flex: 1; }
+  .section-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gray-600); margin-bottom: 20px; padding-bottom: 8px; border-bottom: 1px solid var(--gray-300); }
+  .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
+
+  .tool-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; transition: all 0.25s; border: 1px solid var(--gray-200); text-decoration: none; color: inherit; display: flex; flex-direction: column; }
+  .tool-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); border-color: var(--gold); }
+  .tool-card .card-icon { background: var(--black); padding: 24px; display: flex; align-items: center; justify-content: center; }
+  .tool-card .card-icon svg { width: 48px; height: 48px; }
+  .tool-card .card-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+  .tool-card .card-body h3 { font-size: 16px; font-weight: 600; color: var(--gray-900); margin-bottom: 6px; }
+  .tool-card .card-body p { font-size: 13px; color: var(--gray-600); line-height: 1.5; flex: 1; }
+  .tool-card .card-tag { display: inline-block; margin-top: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 20px; }
+  .tag-live { background: #e6f4ea; color: #1e8e3e; }
+  .tag-soon { background: var(--gold-light); color: var(--gold-dark); }
+
+  /* === FOOTER === */
+  .footer { text-align: center; padding: 20px; font-size: 11px; color: var(--gray-600); border-top: 1px solid var(--gray-200); background: white; }
+
+  @media (max-width: 600px) {
+    .hero { padding: 40px 20px 30px; }
+    .hero-logo { height: 60px; }
+    .hero h1 { font-size: 20px; }
+    .tools-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Nav bar -->
+<div class="topnav">
+  <a class="nav-home" href="index.html">
+    <svg class="nav-logo" viewBox="120 0 160 135" xmlns="http://www.w3.org/2000/svg" style="height:28px;width:auto;">
+      <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+      <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+    </svg>
+    <span style="color:#888;">Paragon Tools</span>
+  </a>
+  <span class="nav-sep">&#x2f;</span>
+  <span class="nav-current">Engineering Tools</span>
+</div>
+
+<!-- Hero section -->
+<div class="hero">
+  <svg class="hero-logo" viewBox="0 0 413.07 220.36" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#CC9933" d="M358.14,183.07v-39.48c0-1.36,0.4-2.43,1.19-3.19c0.79-0.76,1.71-1.14,2.76-1.14c0.46,0,0.95,0.08,1.45,0.23c0.5,0.16,0.97,0.41,1.39,0.76l37.71,30.65v-31.06h8.43v39.54c0,1.36-0.4,2.43-1.19,3.19c-0.79,0.76-1.71,1.14-2.76,1.14c-0.46,0-0.95-0.08-1.45-0.23c-0.5-0.16-0.97-0.41-1.39-0.76l-37.71-30.65v31H358.14z M306.43,170.97c0,1.21,0.44,2.12,1.31,2.72c0.87,0.6,2.26,0.91,4.15,0.91h24.69c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-19.01c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91h-24.69c-1.9,0-3.28,0.3-4.15,0.91c-0.87,0.6-1.31,1.51-1.31,2.72V170.97z M311.95,183.07c-2.63,0-4.85-0.25-6.65-0.76c-1.8-0.51-3.25-1.26-4.36-2.25c-1.1-0.99-1.91-2.22-2.41-3.68c-0.5-1.46-0.76-3.15-0.76-5.06V151.6c0-1.91,0.25-3.6,0.76-5.06c0.5-1.46,1.31-2.69,2.41-3.69c1.1-0.99,2.56-1.74,4.36-2.25c1.8-0.51,4.02-0.76,6.65-0.76h24.58c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25s1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v19.71c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76H311.95z M252.21,183.07c-2.63,0-4.85-0.25-6.65-0.76c-1.8-0.51-3.25-1.26-4.36-2.25c-1.1-0.99-1.91-2.22-2.41-3.68c-0.5-1.46-0.76-3.15-0.76-5.06V151.6c0-1.91,0.25-3.6,0.76-5.06c0.5-1.46,1.31-2.69,2.41-3.69c1.1-0.99,2.56-1.74,4.36-2.25c1.8-0.51,4.02-0.76,6.65-0.76h38.64v8.48h-38.7c-1.9,0-3.28,0.3-4.15,0.91c-0.87,0.6-1.31,1.51-1.31,2.72v19.01c0,1.21,0.44,2.12,1.31,2.72c0.87,0.6,2.26,0.91,4.15,0.91h30.39V161.9h-28.59V154h32.77c1.16,0,2.16,0.42,2.99,1.26c0.83,0.84,1.25,1.84,1.25,3.01v24.8H252.21z M186.21,161.37h36.08v-6.84c0-1.05-0.13-1.96-0.38-2.72c-0.25-0.76-0.7-1.4-1.34-1.93c-0.64-0.53-1.48-0.92-2.53-1.17c-1.05-0.25-2.36-0.38-3.95-0.38h-19.7c-1.59,0-2.91,0.13-3.95,0.38c-1.05,0.25-1.89,0.64-2.53,1.17c-0.64,0.53-1.08,1.17-1.34,1.93c-0.25,0.76-0.38,1.67-0.38,2.72V161.37z M177.78,183.07v-28.54c0-4.72,1.37-8.34,4.1-10.88c2.73-2.53,6.89-3.8,12.46-3.8h19.81c5.58,0,9.73,1.27,12.46,3.8c2.73,2.54,4.1,6.16,4.1,10.88v28.54h-8.43v-13.8h-36.08v13.8H177.78z M127.75,160.03h30.39c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-4.44c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91h-30.39V160.03z M119.32,183.07v-43.22h38.76c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25c1.1,0.99,1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v4.27c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76h-6.51l21.96,15.44h-15.11l-20.34-15.44h-10.34v15.44H119.32z M67.26,161.37h36.08v-6.84c0-1.05-0.13-1.96-0.38-2.72c-0.25-0.76-0.7-1.4-1.34-1.93c-0.64-0.53-1.48-0.92-2.53-1.17c-1.05-0.25-2.36-0.38-3.95-0.38h-19.7c-1.59,0-2.91,0.13-3.95,0.38c-1.05,0.25-1.89,0.64-2.53,1.17c-0.64,0.53-1.08,1.17-1.34,1.93c-0.25,0.76-0.38,1.67-0.38,2.72V161.37z M58.84,183.07v-28.54c0-4.72,1.37-8.34,4.1-10.88c2.73-2.53,6.89-3.8,12.46-3.8h19.81c5.58,0,9.73,1.27,12.46,3.8c2.73,2.54,4.1,6.16,4.1,10.88v28.54h-8.43v-13.8H67.26v13.8H58.84z M9.16,161.08h30.39c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-5.5c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91H9.16V161.08z M0.73,183.07v-43.22h38.76c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25c1.1,0.99,1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v5.62c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76H9.16v14.1H0.73z"/>
+    <path fill="#FFFFFF" d="M262.6,220.36v-5.76H288c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-3.02c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62h-16.91c-5.66,0-8.49-2.1-8.49-6.31v-3.69c0-3.76,2.8-5.64,8.42-5.64h25.44v5.76h-25.64c-0.87,0-1.47,0.09-1.79,0.26c-0.32,0.17-0.48,0.44-0.48,0.81v1.75c0,0.48,0.16,0.81,0.48,1.01c0.32,0.2,0.93,0.3,1.83,0.3h17.11c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v3.49c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H262.6z M233.38,220.36v-29.33h5.76v23.58h20.44v5.76H233.38z M198.05,212.15c0,0.82,0.3,1.44,0.89,1.85c0.6,0.41,1.54,0.62,2.84,0.62h16.87c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-12.9c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62h-16.87c-1.3,0-2.24,0.21-2.84,0.62c-0.6,0.41-0.89,1.03-0.89,1.85V212.15z M201.82,220.36c-1.8,0-3.31-0.17-4.54-0.52c-1.23-0.34-2.22-0.85-2.98-1.53c-0.75-0.67-1.3-1.51-1.65-2.5c-0.34-0.99-0.52-2.14-0.52-3.43v-13.38c0-1.3,0.17-2.44,0.52-3.43c0.34-0.99,0.89-1.83,1.65-2.5c0.75-0.67,1.75-1.18,2.98-1.53c1.23-0.34,2.75-0.52,4.54-0.52h16.79c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v13.38c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H201.82z M156.97,212.15c0,0.82,0.3,1.44,0.89,1.85c0.6,0.41,1.54,0.62,2.84,0.62h16.87c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-12.9c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62H160.7c-1.3,0-2.24,0.21-2.84,0.62c-0.6,0.41-0.89,1.03-0.89,1.85V212.15z M160.74,220.36c-1.8,0-3.31-0.17-4.54-0.52c-1.23-0.34-2.22-0.85-2.98-1.53c-0.75-0.67-1.3-1.51-1.65-2.5c-0.34-0.99-0.52-2.14-0.52-3.43v-13.38c0-1.3,0.17-2.44,0.52-3.43c0.34-0.99,0.89-1.83,1.65-2.5c0.75-0.67,1.75-1.18,2.98-1.53c1.23-0.34,2.75-0.52,4.54-0.52h16.79c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v13.38c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H160.74z M117.2,205.44h20.76c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-3.73c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62H117.2V205.44z M111.44,220.36v-29.33h26.48c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v3.81c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H117.2v9.57H111.44z"/>
+    <rect x="302.69" y="201.11" fill="#CC9933" width="106.75" height="4.87"/>
+    <rect y="201.11" fill="#CC9933" width="106.75" height="4.87"/>
+    <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+    <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+  </svg>
+  <h1>Engineering Tools</h1>
+  <p>Hydraulic Calculators &amp; Design References</p>
+  <hr class="hero-rule">
+</div>
+
+<!-- Tools Grid -->
+<div class="container">
+
+  <div class="section-title">Hydraulic Calculators</div>
+  <div class="tools-grid">
+
+    <!-- Head Loss Calculator -->
+    <a class="tool-card" href="pool-head-loss-calculator.html">
+      <div class="card-icon">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M8 38V18L14 10H34L40 18V38C40 39.1 39.1 40 38 40H10C8.9 40 8 39.1 8 38Z" stroke="#CC9933" stroke-width="2" fill="none"/>
+          <path d="M8 18H40" stroke="#CC9933" stroke-width="2"/>
+          <path d="M18 18V10" stroke="#CC9933" stroke-width="1.5"/>
+          <path d="M30 18V10" stroke="#CC9933" stroke-width="1.5"/>
+          <circle cx="24" cy="29" r="6" stroke="#CC9933" stroke-width="2" fill="none"/>
+          <path d="M24 25V29L27 31" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M14 40V36C14 35.4 14.4 35 15 35H21C21.6 35 22 35.4 22 36V40" stroke="#CC9933" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <h3>Head Loss Calculator</h3>
+        <p>Calculate Total Dynamic Head (TDH) for PVC plumbing circuits. Accounts for pipe friction, fittings, equipment, spa jets, and static head across multiple circuits.</p>
+        <span class="card-tag tag-live">Live</span>
+      </div>
+    </a>
+
+    <!-- Weir & Vanishing Edge Calculator -->
+    <a class="tool-card" href="weir-flow-calculator.html">
+      <div class="card-icon">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="28" width="36" height="12" rx="2" stroke="#CC9933" stroke-width="2" fill="none"/>
+          <path d="M6 28C6 28 12 20 24 20C36 20 42 28 42 28" stroke="#CC9933" stroke-width="2" fill="none"/>
+          <path d="M20 28V16" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M28 28V16" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M16 16H32" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M24 16V12" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M22 12H26" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M10 34H38" stroke="#CC9933" stroke-width="1" stroke-dasharray="2 2" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="card-body">
+        <h3>Weir & Vanishing Edge Calculator</h3>
+        <p>Francis weir formula, catch basin sizing, gutter & pipe recommendations. Pick your edge effect and get all the numbers in one shot.</p>
+        <span class="card-tag tag-live">Live</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- Placeholder for future sections -->
+  <!--
+  <div class="section-title">Design References</div>
+  <div class="tools-grid">
+  </div>
+  -->
+
+</div>
+
+<div class="footer">&copy; 2026 Paragon Pools &mdash; <a href="index.html" style="color:var(--gray-600);text-decoration:none;">Paragon Tools</a> / Engineering Tools</div>
+
+</body>
+</html>

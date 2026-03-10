@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paragon Pools — Head Loss Calculator</title>
+<style>
+  :root {
+    --gold: #CC9933;
+    --gold-dark: #a67a2a;
+    --gold-light: #faf3e6;
+    --gold-lighter: #fdf8f0;
+    --black: #1a1a1a;
+    --charcoal: #2d2d2d;
+    --green: #1e8e3e;
+    --green-light: #e6f4ea;
+    --orange: #e8710a;
+    --orange-light: #fef3e6;
+    --red: #d93025;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-300: #dadce0;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--gray-100); color: var(--gray-900); line-height: 1.5; }
+  .header { background: var(--black); color: white; padding: 20px 32px; display: flex; align-items: center; gap: 20px; }
+  .header-logo { height: 60px; width: auto; }
+  .header-text h1 { font-size: 20px; font-weight: 600; color: white; letter-spacing: 0.5px; }
+  .header-text p { color: var(--gold); font-size: 13px; margin-top: 2px; font-weight: 500; letter-spacing: 0.3px; }
+  .header-divider { width: 1px; height: 50px; background: #444; margin: 0 4px; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+  .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .card-header h2 { font-size: 16px; font-weight: 600; color: var(--gray-800); }
+  .card-header .num { background: var(--gold); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+  .card-body { padding: 20px; }
+  .row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .field { flex: 1; min-width: 180px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-600); margin-bottom: 4px; }
+  .field input, .field select { width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 14px; transition: border 0.2s; }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(204,153,51,0.2); }
+  .hint { font-size: 11px; color: var(--gray-600); margin-top: 2px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .check-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; cursor: pointer; transition: all 0.15s; }
+  .check-item:hover { border-color: var(--gold); background: var(--gold-lighter); }
+  .check-item.checked { border-color: var(--gold); background: var(--gold-light); }
+  .check-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
+  .check-item label { font-size: 13px; cursor: pointer; flex: 1; }
+  .check-item .loss-val { font-size: 11px; color: var(--gray-600); white-space: nowrap; }
+  .circuit-tabs { display: flex; gap: 4px; padding: 12px 20px 0; border-bottom: 1px solid var(--gray-200); flex-wrap: wrap; }
+  .circuit-tab { padding: 8px 16px; border: none; background: none; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--gray-600); border-bottom: 2px solid transparent; transition: all 0.2s; border-radius: 6px 6px 0 0; }
+  .circuit-tab.active { color: var(--gold-dark); border-bottom-color: var(--gold); background: var(--gold-light); }
+  .circuit-tab.add { color: var(--green); }
+  .circuit-tab .remove { margin-left: 6px; color: var(--red); font-weight: 700; font-size: 14px; }
+  .circuit-content { display: none; }
+  .circuit-content.active { display: block; }
+  .section-label { font-size: 13px; font-weight: 600; color: var(--gray-800); margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--gray-200); }
+  .section-label:first-child { margin-top: 0; }
+  .fitting-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
+  .fitting-row .fname { flex: 1; font-size: 13px; min-width: 160px; }
+  .fitting-row input { width: 70px; text-align: center; padding: 6px 8px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 14px; }
+  .fitting-row .eq-len { font-size: 12px; color: var(--gray-600); min-width: 80px; text-align: right; }
+  .results-card { border: 2px solid var(--gold); }
+  .results-card .card-header { background: var(--gold-light); }
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .result-box { padding: 16px; border-radius: 8px; text-align: center; }
+  .result-box.primary { background: var(--gold-light); border: 1px solid #e6cc8a; }
+  .result-box.success { background: var(--green-light); border: 1px solid #a8dab5; }
+  .result-box.warn { background: var(--orange-light); border: 1px solid #f5c98a; }
+  .result-box .val { font-size: 28px; font-weight: 700; line-height: 1.2; }
+  .result-box.primary .val { color: var(--gold-dark); }
+  .result-box.success .val { color: var(--green); }
+  .result-box.warn .val { color: var(--orange); }
+  .result-box .lbl { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+  .breakdown { margin-top: 16px; }
+  .breakdown table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .breakdown th { text-align: left; padding: 8px 12px; background: var(--gray-50); border-bottom: 2px solid var(--gray-300); font-weight: 600; color: var(--gray-600); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .breakdown td { padding: 8px 12px; border-bottom: 1px solid var(--gray-200); }
+  .breakdown tr:last-child td { border-bottom: none; }
+  .breakdown .total-row { font-weight: 700; background: var(--gold-light); }
+  .breakdown .total-row td { border-top: 2px solid var(--gold); }
+  .pump-rec { margin-top: 16px; padding: 16px; background: var(--green-light); border: 1px solid #a8dab5; border-radius: 8px; }
+  .pump-rec h3 { font-size: 14px; font-weight: 600; color: var(--green); margin-bottom: 8px; }
+  .pump-rec p { font-size: 13px; color: var(--gray-800); margin-bottom: 4px; }
+  .pump-rec .pump-list { margin-top: 8px; }
+  .pump-rec .pump-item { padding: 8px 12px; background: white; border-radius: 6px; margin-bottom: 6px; font-size: 13px; border: 1px solid #a8dab5; }
+  .btn-calc { display: block; width: 100%; padding: 14px; background: var(--black); color: var(--gold); border: 2px solid var(--gold); border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 8px; letter-spacing: 0.5px; }
+  .btn-calc:hover { background: var(--gold); color: var(--black); }
+  .pipe-run-group { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px; margin-bottom: 12px; position: relative; }
+  .pipe-run-group .run-title { font-size: 12px; font-weight: 600; color: var(--gold-dark); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .add-run-btn, .remove-run-btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+  .add-run-btn { background: var(--green-light); color: var(--green); border: 1px solid #a8dab5; margin-top: 8px; }
+  .remove-run-btn { background: #fce8e6; color: var(--red); border: 1px solid #f5a8a2; position: absolute; top: 10px; right: 10px; font-size: 11px; }
+  /* === SHARED NAV BAR === */
+  .topnav { background: var(--black); padding: 0 24px; display: flex; align-items: center; height: 48px; gap: 14px; border-bottom: 2px solid var(--gold); }
+  .topnav a.nav-home { display: flex; align-items: center; gap: 10px; text-decoration: none; color: white; font-size: 14px; font-weight: 600; letter-spacing: 0.3px; transition: color 0.2s; flex-shrink: 0; }
+  .topnav a.nav-home:hover { color: var(--gold); }
+  .topnav .nav-logo { height: 28px; width: auto; flex-shrink: 0; }
+  .topnav .nav-sep { color: #555; font-size: 18px; flex-shrink: 0; }
+  .topnav .nav-current { color: var(--gold); font-size: 13px; font-weight: 500; white-space: nowrap; }
+  /* === POOL NAME / SAVE BAR === */
+  .pool-bar { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; padding: 16px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .pool-bar .pool-name-field { flex: 1; min-width: 200px; }
+  .pool-bar .pool-name-field input { width: 100%; padding: 10px 14px; border: 2px solid var(--gray-300); border-radius: 8px; font-size: 16px; font-weight: 600; color: var(--gray-900); transition: border 0.2s; }
+  .pool-bar .pool-name-field input:focus { outline: none; border-color: var(--gold); }
+  .pool-bar .pool-name-field input::placeholder { color: var(--gray-300); font-weight: 400; }
+  .pool-bar .bar-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .bar-btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+  .bar-btn.save { background: var(--black); color: var(--gold); border-color: var(--gold); }
+  .bar-btn.save:hover { background: var(--gold); color: var(--black); }
+  .bar-btn.lib { background: white; color: var(--gray-800); border-color: var(--gray-300); }
+  .bar-btn.lib:hover { border-color: var(--gold); color: var(--gold-dark); }
+  .bar-btn.new { background: white; color: var(--gray-800); border-color: var(--gray-300); }
+  .bar-btn.new:hover { border-color: var(--gold); color: var(--gold-dark); }
+  .bar-btn svg { width: 15px; height: 15px; }
+
+  /* === LIBRARY PANEL === */
+  .library-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+  .library-overlay.open { display: flex; }
+  .library-panel { background: white; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
+  .library-panel .lib-header { padding: 20px 24px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
+  .library-panel .lib-header h2 { font-size: 18px; font-weight: 600; color: var(--gray-900); }
+  .library-panel .lib-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--gray-600); padding: 4px; line-height: 1; }
+  .library-panel .lib-close:hover { color: var(--red); }
+  .library-panel .lib-body { overflow-y: auto; padding: 16px 24px; flex: 1; }
+  .library-panel .lib-empty { text-align: center; padding: 40px 20px; color: var(--gray-600); font-size: 14px; }
+  .lib-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: 8px; margin-bottom: 8px; transition: all 0.15s; cursor: pointer; }
+  .lib-item:hover { border-color: var(--gold); background: var(--gold-lighter); }
+  .lib-item .li-info { flex: 1; }
+  .lib-item .li-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+  .lib-item .li-meta { font-size: 11px; color: var(--gray-600); margin-top: 2px; }
+  .lib-item .li-actions { display: flex; gap: 6px; }
+  .lib-item .li-btn { padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid; }
+  .lib-item .li-btn.load { background: var(--black); color: var(--gold); border-color: var(--gold); }
+  .lib-item .li-btn.load:hover { background: var(--gold); color: var(--black); }
+  .lib-item .li-btn.del { background: white; color: var(--red); border-color: #f5a8a2; }
+  .lib-item .li-btn.del:hover { background: #fce8e6; }
+
+  .footer { text-align: center; padding: 20px; font-size: 11px; color: var(--gray-600); }
+  .footer a { color: var(--gold-dark); text-decoration: none; }
+  @media (max-width: 600px) { .row { flex-direction: column; } .field { min-width: 100%; } .results-grid { grid-template-columns: 1fr 1fr; } .header { flex-direction: column; text-align: center; } }
+  .cost-hidden { display: none; }
+  .cost-chev-closed { transform: rotate(-90deg); }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <a class="nav-home" href="index.html">
+    <svg class="nav-logo" viewBox="120 0 160 135" xmlns="http://www.w3.org/2000/svg">
+      <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+      <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+    </svg>
+  </a>
+  <a href="engineering-tools.html" style="color:#888;text-decoration:none;font-size:13px;font-weight:500;">Engineering Tools</a>
+  <span class="nav-sep">&#x2f;</span>
+  <span class="nav-current">Head Loss Calculator</span>
+</div>
+
+<div class="header">
+  <svg class="header-logo" viewBox="0 0 413.07 220.36" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#CC9933" d="M358.14,183.07v-39.48c0-1.36,0.4-2.43,1.19-3.19c0.79-0.76,1.71-1.14,2.76-1.14c0.46,0,0.95,0.08,1.45,0.23c0.5,0.16,0.97,0.41,1.39,0.76l37.71,30.65v-31.06h8.43v39.54c0,1.36-0.4,2.43-1.19,3.19c-0.79,0.76-1.71,1.14-2.76,1.14c-0.46,0-0.95-0.08-1.45-0.23c-0.5-0.16-0.97-0.41-1.39-0.76l-37.71-30.65v31H358.14z M306.43,170.97c0,1.21,0.44,2.12,1.31,2.72c0.87,0.6,2.26,0.91,4.15,0.91h24.69c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-19.01c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91h-24.69c-1.9,0-3.28,0.3-4.15,0.91c-0.87,0.6-1.31,1.51-1.31,2.72V170.97z M311.95,183.07c-2.63,0-4.85-0.25-6.65-0.76c-1.8-0.51-3.25-1.26-4.36-2.25c-1.1-0.99-1.91-2.22-2.41-3.68c-0.5-1.46-0.76-3.15-0.76-5.06V151.6c0-1.91,0.25-3.6,0.76-5.06c0.5-1.46,1.31-2.69,2.41-3.69c1.1-0.99,2.56-1.74,4.36-2.25c1.8-0.51,4.02-0.76,6.65-0.76h24.58c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25s1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v19.71c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76H311.95z M252.21,183.07c-2.63,0-4.85-0.25-6.65-0.76c-1.8-0.51-3.25-1.26-4.36-2.25c-1.1-0.99-1.91-2.22-2.41-3.68c-0.5-1.46-0.76-3.15-0.76-5.06V151.6c0-1.91,0.25-3.6,0.76-5.06c0.5-1.46,1.31-2.69,2.41-3.69c1.1-0.99,2.56-1.74,4.36-2.25c1.8-0.51,4.02-0.76,6.65-0.76h38.64v8.48h-38.7c-1.9,0-3.28,0.3-4.15,0.91c-0.87,0.6-1.31,1.51-1.31,2.72v19.01c0,1.21,0.44,2.12,1.31,2.72c0.87,0.6,2.26,0.91,4.15,0.91h30.39V161.9h-28.59V154h32.77c1.16,0,2.16,0.42,2.99,1.26c0.83,0.84,1.25,1.84,1.25,3.01v24.8H252.21z M186.21,161.37h36.08v-6.84c0-1.05-0.13-1.96-0.38-2.72c-0.25-0.76-0.7-1.4-1.34-1.93c-0.64-0.53-1.48-0.92-2.53-1.17c-1.05-0.25-2.36-0.38-3.95-0.38h-19.7c-1.59,0-2.91,0.13-3.95,0.38c-1.05,0.25-1.89,0.64-2.53,1.17c-0.64,0.53-1.08,1.17-1.34,1.93c-0.25,0.76-0.38,1.67-0.38,2.72V161.37z M177.78,183.07v-28.54c0-4.72,1.37-8.34,4.1-10.88c2.73-2.53,6.89-3.8,12.46-3.8h19.81c5.58,0,9.73,1.27,12.46,3.8c2.73,2.54,4.1,6.16,4.1,10.88v28.54h-8.43v-13.8h-36.08v13.8H177.78z M127.75,160.03h30.39c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-4.44c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91h-30.39V160.03z M119.32,183.07v-43.22h38.76c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25c1.1,0.99,1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v4.27c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76h-6.51l21.96,15.44h-15.11l-20.34-15.44h-10.34v15.44H119.32z M67.26,161.37h36.08v-6.84c0-1.05-0.13-1.96-0.38-2.72c-0.25-0.76-0.7-1.4-1.34-1.93c-0.64-0.53-1.48-0.92-2.53-1.17c-1.05-0.25-2.36-0.38-3.95-0.38h-19.7c-1.59,0-2.91,0.13-3.95,0.38c-1.05,0.25-1.89,0.64-2.53,1.17c-0.64,0.53-1.08,1.17-1.34,1.93c-0.25,0.76-0.38,1.67-0.38,2.72V161.37z M58.84,183.07v-28.54c0-4.72,1.37-8.34,4.1-10.88c2.73-2.53,6.89-3.8,12.46-3.8h19.81c5.58,0,9.73,1.27,12.46,3.8c2.73,2.54,4.1,6.16,4.1,10.88v28.54h-8.43v-13.8H67.26v13.8H58.84z M9.16,161.08h30.39c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-5.5c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91H9.16V161.08z M0.73,183.07v-43.22h38.76c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25c1.1,0.99,1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v5.62c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76H9.16v14.1H0.73z"/>
+    <path fill="#FFFFFF" d="M262.6,220.36v-5.76H288c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-3.02c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62h-16.91c-5.66,0-8.49-2.1-8.49-6.31v-3.69c0-3.76,2.8-5.64,8.42-5.64h25.44v5.76h-25.64c-0.87,0-1.47,0.09-1.79,0.26c-0.32,0.17-0.48,0.44-0.48,0.81v1.75c0,0.48,0.16,0.81,0.48,1.01c0.32,0.2,0.93,0.3,1.83,0.3h17.11c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v3.49c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H262.6z M233.38,220.36v-29.33h5.76v23.58h20.44v5.76H233.38z M198.05,212.15c0,0.82,0.3,1.44,0.89,1.85c0.6,0.41,1.54,0.62,2.84,0.62h16.87c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-12.9c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62h-16.87c-1.3,0-2.24,0.21-2.84,0.62c-0.6,0.41-0.89,1.03-0.89,1.85V212.15z M201.82,220.36c-1.8,0-3.31-0.17-4.54-0.52c-1.23-0.34-2.22-0.85-2.98-1.53c-0.75-0.67-1.3-1.51-1.65-2.5c-0.34-0.99-0.52-2.14-0.52-3.43v-13.38c0-1.3,0.17-2.44,0.52-3.43c0.34-0.99,0.89-1.83,1.65-2.5c0.75-0.67,1.75-1.18,2.98-1.53c1.23-0.34,2.75-0.52,4.54-0.52h16.79c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v13.38c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H201.82z M156.97,212.15c0,0.82,0.3,1.44,0.89,1.85c0.6,0.41,1.54,0.62,2.84,0.62h16.87c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-12.9c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62H160.7c-1.3,0-2.24,0.21-2.84,0.62c-0.6,0.41-0.89,1.03-0.89,1.85V212.15z M160.74,220.36c-1.8,0-3.31-0.17-4.54-0.52c-1.23-0.34-2.22-0.85-2.98-1.53c-0.75-0.67-1.3-1.51-1.65-2.5c-0.34-0.99-0.52-2.14-0.52-3.43v-13.38c0-1.3,0.17-2.44,0.52-3.43c0.34-0.99,0.89-1.83,1.65-2.5c0.75-0.67,1.75-1.18,2.98-1.53c1.23-0.34,2.75-0.52,4.54-0.52h16.79c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v13.38c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H160.74z M117.2,205.44h20.76c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-3.73c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62H117.2V205.44z M111.44,220.36v-29.33h26.48c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v3.81c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H117.2v9.57H111.44z"/>
+    <rect x="302.69" y="201.11" fill="#CC9933" width="106.75" height="4.87"/>
+    <rect y="201.11" fill="#CC9933" width="106.75" height="4.87"/>
+    <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+    <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+  </svg>
+  <div class="header-divider"></div>
+  <div class="header-text">
+    <h1>Head Loss Calculator</h1>
+    <p>Total Dynamic Head (TDH) for PVC Plumbing Circuits</p>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- POOL NAME / SAVE BAR -->
+  <div class="pool-bar">
+    <div class="pool-name-field">
+      <input type="text" id="poolName" placeholder="Enter pool/project name..." maxlength="80">
+    </div>
+    <div class="bar-btns">
+      <button class="bar-btn save" onclick="savePool()" title="Save current pool">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 2v12h12V4.5L11.5 2H2zm8 1v3H5V3h5zm-3 6a2 2 0 104 0 2 2 0 00-4 0z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+        Save
+      </button>
+      <button class="bar-btn lib" onclick="openLibrary()" title="Open pool library">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M2 3h3l1.5 1.5H14v9H2V3z" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+        Library
+      </button>
+      <button class="bar-btn new" onclick="newPool()" title="Start fresh">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        New
+      </button>
+    </div>
+  </div>
+
+  <!-- LIBRARY MODAL -->
+  <div class="library-overlay" id="libraryOverlay" onclick="if(event.target===this)closeLibrary()">
+    <div class="library-panel">
+      <div class="lib-header">
+        <h2>Saved Pools</h2>
+        <button class="lib-close" onclick="closeLibrary()">&times;</button>
+      </div>
+      <div class="lib-body" id="libraryBody"></div>
+    </div>
+  </div>
+
+  <!-- STEP 1: Pool Info -->
+  <div class="card">
+    <div class="card-header"><span class="num">1</span><h2>Pool Information</h2></div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field">
+          <label>Pool Volume (gallons)</label>
+          <input type="number" id="poolVolume" value="20000" min="0">
+        </div>
+        <div class="field">
+          <label>Desired Turnover (hours)</label>
+          <input type="number" id="turnoverHrs" value="8" min="1" max="24" step="0.5">
+          <div class="hint">Residential: 6-8 hrs &bull; Commercial: 4-6 hrs</div>
+        </div>
+        <div class="field">
+          <label>Required Flow Rate (GPM)</label>
+          <input type="number" id="flowRate" readonly style="background:#f1f3f4; font-weight:600; color:var(--gold-dark);">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Net Static Head / Elevation Change (ft)</label>
+          <input type="number" id="staticHead" value="0" step="0.5">
+          <div class="hint"><strong>Positive (+)</strong> = water must rise (e.g., raised spa, elevated feature, solar panels on roof) &bull; <strong>Negative (&minus;)</strong> = water drops back down (gravity helps)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Circuits -->
+  <div class="card">
+    <div class="card-header"><span class="num">2</span><h2>Plumbing Circuits</h2></div>
+    <div class="circuit-tabs" id="circuitTabs">
+      <button class="circuit-tab active" data-circuit="0">Main Filter</button>
+      <button class="circuit-tab add" onclick="addCircuit()">+ Add Circuit</button>
+    </div>
+    <div id="circuitPanels"></div>
+  </div>
+
+  <!-- STEP 3: Equipment -->
+  <div class="card">
+    <div class="card-header"><span class="num">3</span><h2>Equipment (check all that apply per circuit)</h2></div>
+    <div class="card-body">
+      <div class="row" style="margin-bottom:10px;">
+        <div class="field">
+          <label>Apply equipment to circuit:</label>
+          <select id="equipCircuitSelect"></select>
+        </div>
+      </div>
+      <div id="equipmentPanels"></div>
+    </div>
+  </div>
+
+  <!-- Calculate Button -->
+  <button class="btn-calc" onclick="calculate()">Calculate Total Head Loss</button>
+
+  <!-- RESULTS -->
+  <div class="card results-card" id="resultsCard" style="display:none; margin-top: 20px;">
+    <div class="card-header"><span class="num" style="background:var(--green);">✓</span><h2>Results</h2></div>
+    <div class="card-body" id="resultsBody"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- FILTER SIZING CALCULATOR                             -->
+  <!-- Based on PHTA Builder's Manual 5th Ed, Ch 5          -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="card" id="filterCard" style="margin-top:28px; border: 2px solid var(--gold);">
+    <div class="card-header" onclick="document.getElementById('filterBody').classList.toggle('cost-hidden');this.querySelector('.chev').classList.toggle('cost-chev-closed')" style="cursor:pointer;background:var(--gold-light);">
+      <span class="num" style="background:var(--gold);">&#9881;</span>
+      <h2>Filter &amp; Pump Sizing</h2>
+      <span class="chev" style="margin-left:auto;font-size:18px;color:var(--gray-600);transition:transform .2s;">&#9660;</span>
+    </div>
+    <div class="card-body" id="filterBody">
+
+      <div style="background:var(--gold-lighter);border-left:4px solid var(--gold);padding:10px 14px;border-radius:0 6px 6px 0;font-size:13px;margin-bottom:20px;">
+        Reads pool volume &amp; turnover from above. Select a filter type to see minimum sizing, recommended models, and required flow rate.<br>
+        <span style="color:var(--gray-500);font-size:11px;">Reference: PHTA Builder's Manual 5th Ed, Chapter 5 — Tables 5-34, 5-35</span>
+      </div>
+
+      <!-- Sync strip -->
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+        <button onclick="syncFilterInputs()" style="padding:8px 18px;background:var(--gold);color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">&#x21bb; Sync from Header</button>
+        <span id="filterSyncStatus" style="font-size:12px;color:var(--green);"></span>
+      </div>
+
+      <!-- Inputs row -->
+      <div class="row" style="margin-bottom:16px;">
+        <div class="field" style="min-width:140px;">
+          <label>Pool Volume (gal)</label>
+          <input type="number" id="fltPoolGal" value="20000" min="0" onchange="calcFilter()" oninput="calcFilter()">
+        </div>
+        <div class="field" style="min-width:120px;">
+          <label>Turnover (hrs)</label>
+          <input type="number" id="fltTurnover" value="8" min="1" max="24" step="0.5" onchange="calcFilter()" oninput="calcFilter()">
+        </div>
+        <div class="field" style="min-width:160px;">
+          <label>Filter Type</label>
+          <select id="fltType" onchange="calcFilter()" style="padding:7px 10px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px;width:100%;">
+            <option value="sand">High-Rate Sand (15 gpm/ft²)</option>
+            <option value="de">Diatomaceous Earth (2 gpm/ft²)</option>
+            <option value="cartridge">Cartridge (0.375 gpm/ft²)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Calculated requirements -->
+      <div id="filterResults" style="display:none;">
+        <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Calculated Requirements</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px;">
+          <div style="background:var(--gray-100);border-radius:8px;padding:14px;text-align:center;">
+            <div style="font-size:11px;text-transform:uppercase;color:var(--gray-500);letter-spacing:0.5px;">Required Flow</div>
+            <div id="fltReqFlow" style="font-size:24px;font-weight:700;color:var(--gold-dark);">—</div>
+            <div style="font-size:11px;color:var(--gray-500);">GPM</div>
+          </div>
+          <div style="background:var(--gray-100);border-radius:8px;padding:14px;text-align:center;">
+            <div style="font-size:11px;text-transform:uppercase;color:var(--gray-500);letter-spacing:0.5px;">Min Filter Area</div>
+            <div id="fltMinArea" style="font-size:24px;font-weight:700;color:var(--gold-dark);">—</div>
+            <div style="font-size:11px;color:var(--gray-500);">sq ft</div>
+          </div>
+          <div style="background:var(--gray-100);border-radius:8px;padding:14px;text-align:center;">
+            <div style="font-size:11px;text-transform:uppercase;color:var(--gray-500);letter-spacing:0.5px;">Design Velocity</div>
+            <div id="fltVelocity" style="font-size:24px;font-weight:700;color:var(--gold-dark);">—</div>
+            <div id="fltVelLabel" style="font-size:11px;color:var(--gray-500);">ft/sec in 2" pipe</div>
+          </div>
+          <div style="background:var(--gray-100);border-radius:8px;padding:14px;text-align:center;">
+            <div style="font-size:11px;text-transform:uppercase;color:var(--gray-500);letter-spacing:0.5px;">ANSI Compliant</div>
+            <div id="fltCompliant" style="font-size:24px;font-weight:700;">—</div>
+            <div id="fltCompNote" style="font-size:11px;color:var(--gray-500);">Res. pool ≤ 12 hr</div>
+          </div>
+        </div>
+
+        <!-- Velocity warning -->
+        <div id="fltVelWarn" style="display:none;background:#fff3cd;border-left:4px solid #ffc107;padding:10px 14px;border-radius:0 6px 6px 0;font-size:13px;margin-bottom:16px;color:#856404;"></div>
+
+        <!-- Matching filters from lookup table -->
+        <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:16px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Matching Filters from PHTA Capacity Tables</div>
+        <div id="fltMatches" style="font-size:13px;color:var(--gray-600);">No matches.</div>
+
+        <!-- Pipe velocity reference -->
+        <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Pipe Velocity at This Flow Rate</div>
+        <div id="fltPipeVelocity"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ -->
+  <!-- PLUMBING COST ESTIMATOR                             -->
+  <!-- Pricing from Paragon Pools plumbing sub price list  -->
+  <!-- ═══════════════════════════════════════════════════ -->
+  <div class="card" id="costCard" style="margin-top:28px; border: 2px solid var(--gold);">
+    <div class="card-header" onclick="document.getElementById('costBody').classList.toggle('cost-hidden');this.querySelector('.chev').classList.toggle('cost-chev-closed')" style="cursor:pointer;background:var(--gold-light);">
+      <span class="num" style="background:var(--gold);">$</span>
+      <h2>Plumbing Cost Estimator</h2>
+      <span class="chev" style="margin-left:auto;font-size:18px;color:var(--gray-600);transition:transform .2s;">&#9660;</span>
+    </div>
+    <div class="card-body" id="costBody">
+
+      <div style="background:var(--gold-lighter);border-left:4px solid var(--gold);padding:10px 14px;border-radius:0 6px 6px 0;font-size:13px;margin-bottom:20px;">
+        Pricing from your plumbing sub's price list. Pipe footage auto-reads from your circuits above. Adjust quantities and add extras below.
+      </div>
+
+      <!-- Sync button -->
+      <div style="margin-bottom:18px;">
+        <button onclick="syncFromCircuits()" style="padding:8px 18px;background:var(--gold);color:white;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">&#x21bb; Sync Pipe Data from Circuits Above</button>
+        <span id="syncStatus" style="font-size:12px;color:var(--green);margin-left:10px;"></span>
+      </div>
+
+      <!-- ── BASE PACKAGES ── -->
+      <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Base Packages</div>
+      <div id="costBasePackages"></div>
+
+      <!-- ── PIPE FOOTAGE (auto-synced) ── -->
+      <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Pipe Footage <span style="font-size:11px;font-weight:400;color:var(--gray-600);">(PVC per LF — auto-synced from circuits)</span></div>
+      <div id="costPipeFootage"></div>
+
+      <!-- ── ADDITIONAL LINE ITEMS ── -->
+      <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Additional Items (Returns, Skimmers, Jets, etc.)</div>
+      <div id="costAdditionals"></div>
+
+      <!-- ── SUCTION LINES ── -->
+      <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Suction Lines</div>
+      <div id="costSuction"></div>
+
+      <!-- ── GAS LINES ── -->
+      <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Gas Lines</div>
+      <div id="costGas"></div>
+
+      <!-- ── EQUIPMENT INSTALLS ── -->
+      <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Equipment Installs</div>
+      <div id="costEquipment"></div>
+
+      <!-- ── VALVES ── -->
+      <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Valves (Install + Supply)</div>
+      <div id="costValves"></div>
+
+      <!-- ── SPECIALTY ── -->
+      <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Specialty Items</div>
+      <div id="costSpecialty"></div>
+
+      <!-- ── LABOR EXTRAS ── -->
+      <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Labor / Excavation</div>
+      <div id="costLabor"></div>
+
+      <!-- ── ELECTRICAL CONDUIT ── -->
+      <div style="font-size:14px;font-weight:700;color:var(--gray-800);margin:20px 0 10px;padding-bottom:4px;border-bottom:2px solid var(--gold);">Electrical Conduit</div>
+      <div id="costConduit"></div>
+
+      <!-- ════════ GRAND TOTAL ════════ -->
+      <div style="margin-top:24px;padding:20px;background:var(--black);border-radius:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+          <div style="color:var(--gold);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">Estimated Plumbing Total</div>
+          <div id="costGrandTotal" style="color:white;font-size:36px;font-weight:700;letter-spacing:0.5px;">$0.00</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="copyCostSummary()" style="padding:8px 16px;background:var(--gold);color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">&#128203; Copy Summary</button>
+          <button onclick="resetCostEstimator()" style="padding:8px 16px;background:transparent;color:#999;border:1px solid #555;border-radius:6px;font-size:12px;cursor:pointer;">Reset</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+const EQUIV_LENGTHS = {
+  '1.5': { 'elbow90': 5.0, 'elbow45': 2.5, 'tee_run': 3.5, 'tee_branch': 8.0, 'coupling': 0.5, 'union': 1.5, 'ball_valve': 0.5, 'check_valve': 12.0, 'gate_valve': 0.8, 'three_way_valve': 8.0, 'diverter_valve': 8.0 },
+  '2':   { 'elbow90': 6.0, 'elbow45': 3.0, 'tee_run': 4.5, 'tee_branch': 10.0, 'coupling': 0.6, 'union': 2.0, 'ball_valve': 0.6, 'check_valve': 15.0, 'gate_valve': 1.0, 'three_way_valve': 10.0, 'diverter_valve': 10.0 },
+  '2.5': { 'elbow90': 7.5, 'elbow45': 3.8, 'tee_run': 5.5, 'tee_branch': 12.0, 'coupling': 0.8, 'union': 2.5, 'ball_valve': 0.8, 'check_valve': 18.0, 'gate_valve': 1.2, 'three_way_valve': 12.0, 'diverter_valve': 12.0 },
+  '3':   { 'elbow90': 8.0, 'elbow45': 4.0, 'tee_run': 6.0, 'tee_branch': 14.0, 'coupling': 1.0, 'union': 3.0, 'ball_valve': 1.0, 'check_valve': 20.0, 'gate_valve': 1.5, 'three_way_valve': 14.0, 'diverter_valve': 14.0 },
+  '4':   { 'elbow90': 10.0, 'elbow45': 5.0, 'tee_run': 8.0, 'tee_branch': 18.0, 'coupling': 1.2, 'union': 4.0, 'ball_valve': 1.2, 'check_valve': 25.0, 'gate_valve': 2.0, 'three_way_valve': 18.0, 'diverter_valve': 18.0 }
+};
+
+const FITTING_NAMES = {
+  'elbow90': '90° Elbow', 'elbow45': '45° Elbow', 'tee_run': 'Tee (straight run)', 'tee_branch': 'Tee (branch)',
+  'coupling': 'Coupling', 'union': 'Union', 'ball_valve': 'Ball Valve', 'check_valve': 'Check Valve',
+  'gate_valve': 'Gate Valve', 'three_way_valve': '3-Way Valve', 'diverter_valve': 'Diverter Valve'
+};
+
+// Equipment head loss: uses Hf factors where loss = Hf × GPM² (flow-dependent)
+// Sources: TroubleFreePools Hf data, InTheSwim @70GPM tables, Pentair specs,
+//          Florida Solar Design Group, PHTA Builder's Manual Ch.5
+// Items marked 'fixed' use a constant ft value (elevation or specialty items)
+const EQUIPMENT = [
+  // Filters — Hf derived from InTheSwim data @70GPM cross-checked with TFP Hf
+  { id: 'cartridge_filter', name: 'Cartridge Filter', hf: 0.0015, group: 'filter' },
+  { id: 'sand_filter', name: 'Sand Filter (clean, w/ valve)', hf: 0.0035, group: 'filter' },
+  { id: 'de_filter', name: 'DE Filter', hf: 0.0013, group: 'filter' },
+  // Heaters — gas Hf from TFP (0.002), confirmed by Hayward 7.5ft@60GPM
+  //           heat pump Hf from TFP range 0.0055–0.0065
+  { id: 'heater_gas', name: 'Gas Heater', hf: 0.002, group: 'heater' },
+  { id: 'heater_electric', name: 'Electric / Heat Pump', hf: 0.006, group: 'heater' },
+  // Sanitizers — salt cell: Pentair IntelliChlor spec <1 PSI (<2.31 ft) at any flow
+  //              UV/ozone: low-restriction inline devices, estimated from industry norms
+  { id: 'salt_cell', name: 'Salt Chlorine Generator', hf: 0.0001, group: 'sanitizer' },
+  { id: 'uv_system', name: 'UV Sanitizer', hf: 0.0003, group: 'sanitizer' },
+  { id: 'ozone', name: 'Ozone Generator', hf: 0.0002, group: 'sanitizer' },
+  { id: 'auto_chlor', name: 'Inline Chlorinator', hf: 0.0001, group: 'sanitizer' },
+  // Pump internals — small fixed losses not strongly flow-dependent
+  { id: 'vsp_pump', name: 'Variable Speed Pump (internal)', fixed: 1, group: 'pump' },
+  // Booster pump — separate circuit, adds back-pressure to main line
+  { id: 'booster_pump', name: 'Booster Pump / Cleaner Line', fixed: 2, group: 'other' },
+  // Solar panels — 1–5 PSI typical (Florida Solar Design Group), Hf from mid-range
+  { id: 'solar_panels', name: 'Solar Heating Panels', hf: 0.003, group: 'heater' },
+  // Features — primarily elevation-dependent, use fixed estimates
+  { id: 'water_feature', name: 'Water Feature / Sheer Descent', fixed: 5, group: 'feature' },
+  { id: 'spillover_spa', name: 'Spillover Spa', fixed: 5, group: 'feature' },
+  // In-floor cleaning — high-restriction valve/manifold system
+  { id: 'in_floor_clean', name: 'In-Floor Cleaning System', hf: 0.004, group: 'other' }
+];
+
+// Helper: get equipment head loss in feet for a given GPM
+function equipLossFt(equip, gpm) {
+  if (equip.fixed !== undefined) return equip.fixed;
+  return equip.hf * gpm * gpm;
+}
+
+const PIPE_DIAMETERS = ['1.5', '2', '2.5', '3', '4'];
+
+let circuits = [];
+let activeCircuit = 0;
+
+// Spa jet head loss per jet by orifice size (ft of head per jet at typical flow)
+const SPA_JET_LOSS = {
+  '0.5': 1.8,
+  '0.75': 1.2,
+  '1': 0.8,
+  '1.5': 0.5
+};
+
+function createCircuit(name, type) {
+  const c = {
+    name: name,
+    type: type, // 'main' or 'feature'
+    pipeRuns: [{ side: 'suction', diameter: '2', length: 20 }, { side: 'return', diameter: '2', length: 30 }],
+    fittings: {},
+    fittingDiameter: '2',
+    equipment: {},
+    customFlowGPM: '',
+    spaJets: { enabled: false, count: 0, orificeSize: '1' }
+  };
+  Object.keys(FITTING_NAMES).forEach(f => c.fittings[f] = 0);
+  return c;
+}
+
+function syncFittingDiameter(ci) {
+  const c = circuits[ci];
+  if (!c || !c.pipeRuns || c.pipeRuns.length === 0) return;
+  let smallest = 99;
+  c.pipeRuns.forEach(r => {
+    const d = parseFloat(r.diameter);
+    if (d > 0 && d < smallest) smallest = d;
+  });
+  if (smallest < 99) c.fittingDiameter = String(smallest);
+}
+
+function init() {
+  circuits.push(createCircuit('Main Filter', 'main'));
+  renderAll();
+  calcFlowRate();
+  document.getElementById('poolVolume').addEventListener('input', calcFlowRate);
+  document.getElementById('turnoverHrs').addEventListener('input', calcFlowRate);
+}
+
+function calcFlowRate() {
+  const vol = parseFloat(document.getElementById('poolVolume').value) || 0;
+  const hrs = parseFloat(document.getElementById('turnoverHrs').value) || 8;
+  const gpm = vol / (hrs * 60);
+  document.getElementById('flowRate').value = gpm.toFixed(1);
+}
+
+function renderAll() {
+  renderCircuitTabs();
+  renderCircuitPanels();
+  renderEquipmentPanels();
+  updateEquipCircuitSelect();
+}
+
+function renderCircuitTabs() {
+  const container = document.getElementById('circuitTabs');
+  container.innerHTML = '';
+  circuits.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'circuit-tab' + (i === activeCircuit ? ' active' : '');
+    btn.dataset.circuit = i;
+    btn.innerHTML = c.name + (circuits.length > 1 ? `<span class="remove" onclick="event.stopPropagation();removeCircuit(${i})">&times;</span>` : '');
+    btn.onclick = () => { activeCircuit = i; renderAll(); };
+    container.appendChild(btn);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'circuit-tab add';
+  addBtn.textContent = '+ Add Circuit';
+  addBtn.onclick = addCircuit;
+  container.appendChild(addBtn);
+}
+
+function addCircuit() {
+  const name = prompt('Circuit name:', 'Water Feature ' + circuits.length);
+  if (!name) return;
+  const type = confirm('Is this a standalone feature circuit (not going through main equipment)?') ? 'feature' : 'main';
+  circuits.push(createCircuit(name, type));
+  activeCircuit = circuits.length - 1;
+  renderAll();
+}
+
+function removeCircuit(i) {
+  if (circuits.length <= 1) return;
+  if (!confirm('Remove "' + circuits[i].name + '"?')) return;
+  circuits.splice(i, 1);
+  activeCircuit = Math.min(activeCircuit, circuits.length - 1);
+  renderAll();
+}
+
+function renderCircuitPanels() {
+  const container = document.getElementById('circuitPanels');
+  container.innerHTML = '';
+  circuits.forEach((c, ci) => {
+    const panel = document.createElement('div');
+    panel.className = 'circuit-content' + (ci === activeCircuit ? ' active' : '');
+    panel.innerHTML = buildCircuitHTML(c, ci);
+    container.appendChild(panel);
+  });
+}
+
+function buildCircuitHTML(c, ci) {
+  let html = '<div class="card-body">';
+  html += `<div class="row"><div class="field"><label>Circuit Type</label><select onchange="circuits[${ci}].type=this.value"><option value="main" ${c.type==='main'?'selected':''}>Main (through equipment pad)</option><option value="feature" ${c.type==='feature'?'selected':''}>Standalone Feature (no equipment)</option></select></div>`;
+  html += `<div class="field"><label>Custom Flow Rate (GPM) — leave blank to use pool calc</label><input type="number" value="${c.customFlowGPM}" min="0" onchange="circuits[${ci}].customFlowGPM=this.value" placeholder="Auto from Step 1"></div></div>`;
+
+  // Pipe Runs
+  html += '<div class="section-label">Pipe Runs</div>';
+  c.pipeRuns.forEach((r, ri) => {
+    html += `<div class="pipe-run-group"><div class="run-title">${r.side === 'suction' ? 'Suction Side' : r.side === 'return' ? 'Return / Pressure Side' : 'Run'} #${ri+1}</div>`;
+    if (c.pipeRuns.length > 1) html += `<button class="remove-run-btn" onclick="removePipeRun(${ci},${ri})">Remove</button>`;
+    html += `<div class="row"><div class="field"><label>Side</label><select onchange="circuits[${ci}].pipeRuns[${ri}].side=this.value;renderAll()"><option value="suction" ${r.side==='suction'?'selected':''}>Suction</option><option value="return" ${r.side==='return'?'selected':''}>Return / Pressure</option></select></div>`;
+    html += `<div class="field"><label>Diameter (inches)</label><select onchange="circuits[${ci}].pipeRuns[${ri}].diameter=this.value;syncFittingDiameter(${ci});renderAll()">${PIPE_DIAMETERS.map(d=>`<option value="${d}" ${r.diameter===d?'selected':''}>${d}"</option>`).join('')}</select></div>`;
+    html += `<div class="field"><label>Length (feet)</label><input type="number" value="${r.length}" min="0" onchange="circuits[${ci}].pipeRuns[${ri}].length=parseFloat(this.value)||0"></div></div></div>`;
+  });
+  html += `<button class="add-run-btn" onclick="addPipeRun(${ci})">+ Add Pipe Run</button>`;
+
+  // Fittings
+  html += '<div class="section-label" style="margin-top:20px;">Fittings (enter quantity of each)</div>';
+  html += `<div class="row" style="margin-bottom:10px;"><div class="field" style="max-width:280px;"><label>Fitting diameter (auto-matched to smallest pipe run)</label><div style="padding:8px 12px;background:var(--gray-100);border-radius:6px;font-weight:600;color:var(--gold-dark);">${c.fittingDiameter}"</div></div></div>`;
+  const eqs = EQUIV_LENGTHS[c.fittingDiameter];
+  Object.keys(FITTING_NAMES).forEach(f => {
+    html += `<div class="fitting-row"><span class="fname">${FITTING_NAMES[f]}</span><input type="number" min="0" value="${c.fittings[f]}" onchange="circuits[${ci}].fittings['${f}']=parseInt(this.value)||0"><span class="eq-len">${eqs[f]} ft ea.</span></div>`;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+function addPipeRun(ci) {
+  circuits[ci].pipeRuns.push({ side: 'return', diameter: '2', length: 10 });
+  renderAll();
+}
+function removePipeRun(ci, ri) {
+  circuits[ci].pipeRuns.splice(ri, 1);
+  renderAll();
+}
+
+function renderEquipmentPanels() {
+  const container = document.getElementById('equipmentPanels');
+  container.innerHTML = '';
+  circuits.forEach((c, ci) => {
+    const panel = document.createElement('div');
+    panel.style.display = (ci === activeCircuit) ? 'block' : 'none';
+    panel.id = 'equipPanel_' + ci;
+    let html = '<div class="grid-3">';
+    const eqGPM = getFlowForCircuit(ci);
+    EQUIPMENT.forEach(eq => {
+      const checked = c.equipment[eq.id] ? 'checked' : '';
+      const lossVal = equipLossFt(eq, eqGPM);
+      const lossLabel = lossVal < 0.1 ? '<0.1 ft' : lossVal.toFixed(1) + ' ft';
+      const flowNote = eq.hf ? ` @ ${eqGPM.toFixed(0)} GPM` : '';
+      html += `<div class="check-item ${checked}" onclick="toggleEquip(${ci},'${eq.id}',this)"><input type="checkbox" ${checked} tabindex="-1"><label>${eq.name}</label><span class="loss-val">${lossLabel}${flowNote}</span></div>`;
+    });
+    html += '</div>';
+
+    // Spa Jets — configurable section
+    const sj = c.spaJets;
+    const sjChecked = sj.enabled ? 'checked' : '';
+    const sjLoss = sj.enabled && sj.count > 0 ? (SPA_JET_LOSS[sj.orificeSize] * sj.count).toFixed(1) : '0';
+    html += `<div style="margin-top:14px;padding:14px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;">`;
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><input type="checkbox" ${sjChecked} onchange="circuits[${ci}].spaJets.enabled=this.checked;renderEquipmentPanels()" style="width:16px;height:16px;accent-color:var(--blue);cursor:pointer;"><span style="font-size:14px;font-weight:600;">Spa Jets</span><span style="font-size:12px;color:var(--gray-600);margin-left:auto;">Total: ${sjLoss} ft head loss</span></div>`;
+    if (sj.enabled) {
+      html += `<div class="row"><div class="field"><label>Number of Jets</label><input type="number" min="0" max="30" value="${sj.count}" onchange="circuits[${ci}].spaJets.count=parseInt(this.value)||0;renderEquipmentPanels()"></div>`;
+      html += `<div class="field"><label>Jet Orifice Size</label><select onchange="circuits[${ci}].spaJets.orificeSize=this.value;renderEquipmentPanels()">`;
+      html += `<option value="0.5" ${sj.orificeSize==='0.5'?'selected':''}>1/2" (high restriction)</option>`;
+      html += `<option value="0.75" ${sj.orificeSize==='0.75'?'selected':''}>3/4"</option>`;
+      html += `<option value="1" ${sj.orificeSize==='1'?'selected':''}>1" (standard)</option>`;
+      html += `<option value="1.5" ${sj.orificeSize==='1.5'?'selected':''}>1-1/2" (low restriction)</option>`;
+      html += `</select><div class="hint">${SPA_JET_LOSS[sj.orificeSize]} ft per jet</div></div></div>`;
+    }
+    html += '</div>';
+
+    panel.innerHTML = html;
+    container.appendChild(panel);
+  });
+}
+
+function toggleEquip(ci, eqId, el) {
+  circuits[ci].equipment[eqId] = !circuits[ci].equipment[eqId];
+  el.classList.toggle('checked');
+  el.querySelector('input').checked = circuits[ci].equipment[eqId];
+}
+
+function updateEquipCircuitSelect() {
+  const sel = document.getElementById('equipCircuitSelect');
+  sel.innerHTML = circuits.map((c,i) => `<option value="${i}" ${i===activeCircuit?'selected':''}>${c.name}</option>`).join('');
+  sel.onchange = function() {
+    const ci = parseInt(this.value);
+    activeCircuit = ci;
+    document.querySelectorAll('[id^=equipPanel_]').forEach((p,i) => p.style.display = i===ci ? 'block' : 'none');
+    renderCircuitTabs();
+  };
+}
+
+// Hazen-Williams for PVC (C=150)
+// hf = (10.67 * L * Q^1.852) / (C^1.852 * d^4.87)
+// where Q in m³/s, d in m, L in m, result in m (then convert to ft)
+// Or in US units: hf (ft per foot) = (4.52 * Q^1.852) / (C^1.852 * d^4.87) then * length
+// Q in GPM, d in inches => friction loss in ft per 100ft = (10.44 * L * Q^1.852) / (C^1.852 * d^4.8655)
+// Simplified for ft of head per 100ft of pipe:
+function frictionLossPer100ft(gpm, diamInches) {
+  const C = 150;
+  if (gpm <= 0 || diamInches <= 0) return 0;
+  return (10.44 * Math.pow(gpm, 1.852)) / (Math.pow(C, 1.852) * Math.pow(diamInches, 4.8655));
+}
+
+function getFlowForCircuit(ci) {
+  const c = circuits[ci];
+  if (c.customFlowGPM && parseFloat(c.customFlowGPM) > 0) return parseFloat(c.customFlowGPM);
+  return parseFloat(document.getElementById('flowRate').value) || 0;
+}
+
+function velocityFPS(gpm, diamInches) {
+  if (gpm <= 0 || diamInches <= 0) return 0;
+  const areaSqFt = Math.PI * Math.pow(diamInches / 24, 2);
+  return (gpm / 448.831) / areaSqFt;
+}
+
+function calculate() {
+  const staticHead = parseFloat(document.getElementById('staticHead').value) || 0;
+  let allResults = [];
+
+  circuits.forEach((c, ci) => {
+    const gpm = getFlowForCircuit(ci);
+    let pipeLoss = 0, fittingLoss = 0, equipLoss = 0;
+    let pipeDetails = [], fittingDetails = [], equipDetails = [];
+    let velocityWarnings = [];
+
+    // Pipe runs
+    c.pipeRuns.forEach((r, ri) => {
+      const lossPer100 = frictionLossPer100ft(gpm, parseFloat(r.diameter));
+      const loss = lossPer100 * r.length / 100;
+      const vel = velocityFPS(gpm, parseFloat(r.diameter));
+      pipeLoss += loss;
+      pipeDetails.push({ label: `${r.side === 'suction' ? 'Suction' : 'Return'} — ${r.diameter}" × ${r.length} ft`, loss: loss, velocity: vel });
+      if (r.side === 'suction' && vel > 6) velocityWarnings.push(`Suction run #${ri+1} (${r.diameter}" pipe): ${vel.toFixed(1)} ft/s (max recommended: 6 ft/s)`);
+      if (r.side === 'return' && vel > 8) velocityWarnings.push(`Return run #${ri+1} (${r.diameter}" pipe): ${vel.toFixed(1)} ft/s (max recommended: 8 ft/s)`);
+    });
+
+    // Fittings
+    const eqs = EQUIV_LENGTHS[c.fittingDiameter];
+    const fitDiam = parseFloat(c.fittingDiameter);
+    const lossPer100Fit = frictionLossPer100ft(gpm, fitDiam);
+    Object.keys(c.fittings).forEach(f => {
+      if (c.fittings[f] > 0) {
+        const eqLen = eqs[f] * c.fittings[f];
+        const loss = lossPer100Fit * eqLen / 100;
+        fittingLoss += loss;
+        fittingDetails.push({ label: `${c.fittings[f]}× ${FITTING_NAMES[f]} (${(eqs[f] * c.fittings[f]).toFixed(1)} ft eq.)`, loss: loss });
+      }
+    });
+
+    // Equipment (flow-dependent: Hf × GPM², or fixed ft)
+    EQUIPMENT.forEach(eq => {
+      if (c.equipment[eq.id]) {
+        const loss = equipLossFt(eq, gpm);
+        equipLoss += loss;
+        const suffix = eq.hf ? ` <span style="color:var(--gray-500);font-size:10px;">(Hf=${eq.hf} × ${gpm.toFixed(0)}² GPM)</span>` : '';
+        equipDetails.push({ label: eq.name + suffix, loss: loss });
+      }
+    });
+
+    // Spa Jets
+    if (c.spaJets.enabled && c.spaJets.count > 0) {
+      const jetLoss = SPA_JET_LOSS[c.spaJets.orificeSize] * c.spaJets.count;
+      equipLoss += jetLoss;
+      equipDetails.push({ label: `Spa Jets: ${c.spaJets.count}x ${c.spaJets.orificeSize}" orifice`, loss: jetLoss });
+    }
+
+    const circuitTDH = pipeLoss + fittingLoss + equipLoss + (ci === 0 ? staticHead : 0);
+
+    allResults.push({
+      name: c.name, type: c.type, gpm: gpm,
+      pipeLoss, fittingLoss, equipLoss, staticHead: ci === 0 ? staticHead : 0,
+      total: circuitTDH, pipeDetails, fittingDetails, equipDetails, velocityWarnings
+    });
+  });
+
+  // Overall TDH = max of all circuits (pump must handle the worst case)
+  const overallTDH = Math.max(...allResults.map(r => r.total));
+  const totalGPM = Math.max(...allResults.map(r => r.gpm));
+
+  renderResults(allResults, overallTDH, totalGPM);
+}
+
+function recommendPump(tdh, gpm) {
+  const recs = [];
+  const hp_estimate = (gpm * tdh) / (3960 * 0.65); // rough HP estimate at 65% efficiency
+
+  // Verified Pentair specs (swimmingpoolsteve.com, pentair.com, troublefreepool.com):
+  //   SuperFlo VS 342001:       1.5 HP, ~104 GPM @ 30' TDH, ~95 GPM @ 40' TDH
+  //   IntelliFlo3 VSF 011075:   3 HP,   ~140 GPM max, handles most residential
+  //   IntelliFlo XF 022055:     3 HP high-flow impeller, ~205 GPM @ 30', ~191 GPM @ 40'
+  if (gpm <= 50 && tdh <= 40) recs.push({ name: 'Pentair SuperFlo VS (342001)', hp: '1.5 HP / Variable Speed', note: 'Energy-efficient entry-level VS pump — rated ~95 GPM @ 40\' TDH' });
+  if (gpm <= 80 && tdh <= 55) recs.push({ name: 'Pentair IntelliFlo3 VSF (011075)', hp: '3 HP / Variable Speed + Flow', note: 'Flagship residential VS pump with sensorless flow control — max ~140 GPM' });
+  if (gpm <= 140 && tdh <= 65) recs.push({ name: 'Pentair IntelliFlo3 VSF (011075)', hp: '3 HP / Variable Speed + Flow', note: 'Handles up to ~140 GPM — best for mid-to-large residential pools' });
+  if (gpm > 80 && tdh <= 70) recs.push({ name: 'Pentair IntelliFloXF (022055)', hp: '3 HP / High-Flow VS', note: 'XF high-flow impeller — rated ~205 GPM @ 30\' TDH, needs 2.5"+ plumbing' });
+  if (gpm > 140 || tdh > 70) recs.push({ name: 'Commercial Pump Required', hp: `Est. ${Math.ceil(hp_estimate * 2)/2}+ HP`, note: 'Contact Pentair commercial division for high-flow/high-head applications' });
+
+  if (recs.length === 0) recs.push({ name: 'Standard Variable Speed Pump', hp: `Est. ${Math.ceil(hp_estimate * 2)/2} HP`, note: 'Select a VS pump rated for your GPM at the calculated TDH' });
+
+  return { recs, hp_estimate };
+}
+
+function renderResults(allResults, overallTDH, totalGPM) {
+  const card = document.getElementById('resultsCard');
+  const body = document.getElementById('resultsBody');
+  card.style.display = 'block';
+
+  const pump = recommendPump(overallTDH, totalGPM);
+
+  let html = '<div class="results-grid">';
+  html += `<div class="result-box primary"><div class="val">${overallTDH.toFixed(1)} ft</div><div class="lbl">Total Dynamic Head (TDH)</div></div>`;
+  html += `<div class="result-box success"><div class="val">${totalGPM.toFixed(1)} GPM</div><div class="lbl">Design Flow Rate</div></div>`;
+  html += `<div class="result-box warn"><div class="val">${Math.ceil(pump.hp_estimate * 2)/2} HP</div><div class="lbl">Estimated Min. Pump HP</div></div>`;
+  html += '</div>';
+
+  // Per-circuit breakdown
+  allResults.forEach(r => {
+    html += `<div class="breakdown"><h3 style="font-size:15px;margin:20px 0 10px;color:var(--gray-800);">${r.name} <span style="font-size:12px;color:var(--gray-600);">(${r.type === 'main' ? 'Equipment Circuit' : 'Feature Circuit'} — ${r.gpm.toFixed(1)} GPM)</span></h3>`;
+    html += '<table><thead><tr><th>Component</th><th style="text-align:right;">Head Loss (ft)</th></tr></thead><tbody>';
+    r.pipeDetails.forEach(p => html += `<tr><td>${p.label} <span style="color:var(--gray-600);font-size:11px;">(${p.velocity.toFixed(1)} ft/s)</span></td><td style="text-align:right;">${p.loss.toFixed(2)}</td></tr>`);
+    r.fittingDetails.forEach(f => html += `<tr><td>${f.label}</td><td style="text-align:right;">${f.loss.toFixed(2)}</td></tr>`);
+    r.equipDetails.forEach(e => html += `<tr><td>${e.label}</td><td style="text-align:right;">${e.loss.toFixed(2)}</td></tr>`);
+    if (r.staticHead > 0) html += `<tr><td>Static Head / Elevation</td><td style="text-align:right;">${r.staticHead.toFixed(2)}</td></tr>`;
+    html += `<tr class="total-row"><td>Circuit Total</td><td style="text-align:right;">${r.total.toFixed(2)} ft</td></tr>`;
+    html += '</tbody></table>';
+
+    if (r.velocityWarnings.length > 0) {
+      html += `<div style="margin-top:8px;padding:8px 12px;background:#fce8e6;border-radius:6px;border:1px solid #f5a8a2;font-size:12px;color:var(--red);">⚠ Velocity Warning:<br>${r.velocityWarnings.join('<br>')}</div>`;
+    }
+    html += '</div>';
+  });
+
+  // Pump recommendation
+  html += '<div class="pump-rec"><h3>Pump Sizing Recommendations</h3>';
+  html += `<p>Your system needs a pump that can deliver <strong>${totalGPM.toFixed(1)} GPM at ${overallTDH.toFixed(1)} ft TDH</strong>. Verify on the manufacturer's pump curve that the pump can deliver the required GPM at your calculated TDH.</p>`;
+  html += '<div class="pump-list">';
+  pump.recs.forEach(p => {
+    html += `<div class="pump-item"><strong>${p.name}</strong> — ${p.hp}<br><span style="color:var(--gray-600);font-size:12px;">${p.note}</span></div>`;
+  });
+  html += '</div></div>';
+
+  body.innerHTML = html;
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ==========================================
+// SAVE / LOAD / LIBRARY (localStorage)
+// ==========================================
+const STORAGE_KEY = 'paragon_pool_library';
+
+function getLibrary() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function setLibrary(lib) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(lib));
+}
+
+function gatherState() {
+  return {
+    poolName: document.getElementById('poolName').value.trim(),
+    poolVolume: document.getElementById('poolVolume').value,
+    turnoverHrs: document.getElementById('turnoverHrs').value,
+    staticHead: document.getElementById('staticHead').value,
+    circuits: circuits.map(c => ({
+      name: c.name,
+      type: c.type,
+      pipeRuns: c.pipeRuns.map(r => ({ side: r.side, diameter: r.diameter, length: r.length })),
+      fittings: { ...c.fittings },
+      fittingDiameter: c.fittingDiameter,
+      equipment: { ...c.equipment },
+      customFlowGPM: c.customFlowGPM,
+      spaJets: { ...c.spaJets }
+    })),
+    activeCircuit: activeCircuit
+  };
+}
+
+function restoreState(state) {
+  document.getElementById('poolName').value = state.poolName || '';
+  document.getElementById('poolVolume').value = state.poolVolume || 20000;
+  document.getElementById('turnoverHrs').value = state.turnoverHrs || 8;
+  document.getElementById('staticHead').value = state.staticHead || 0;
+
+  circuits = state.circuits.map(c => {
+    const nc = createCircuit(c.name, c.type);
+    nc.pipeRuns = c.pipeRuns || nc.pipeRuns;
+    nc.fittings = { ...nc.fittings, ...c.fittings };
+    // Auto-sync fittingDiameter from pipe runs
+    nc.fittingDiameter = c.fittingDiameter || '2';
+    if (nc.pipeRuns && nc.pipeRuns.length > 0) {
+      let sm = 99;
+      nc.pipeRuns.forEach(r => { const d = parseFloat(r.diameter); if (d > 0 && d < sm) sm = d; });
+      if (sm < 99) nc.fittingDiameter = String(sm);
+    }
+    nc.equipment = c.equipment || {};
+    nc.customFlowGPM = c.customFlowGPM || '';
+    nc.spaJets = c.spaJets || { enabled: false, count: 0, orificeSize: '1' };
+    return nc;
+  });
+  activeCircuit = state.activeCircuit || 0;
+  if (activeCircuit >= circuits.length) activeCircuit = 0;
+
+  calcFlowRate();
+  renderAll();
+  // Hide results since we loaded fresh data
+  document.getElementById('resultsCard').style.display = 'none';
+}
+
+function savePool() {
+  const name = document.getElementById('poolName').value.trim();
+  if (!name) {
+    document.getElementById('poolName').focus();
+    document.getElementById('poolName').style.borderColor = '#d93025';
+    setTimeout(() => document.getElementById('poolName').style.borderColor = '', 1500);
+    return;
+  }
+  const state = gatherState();
+  const lib = getLibrary();
+  const now = new Date().toISOString();
+
+  // Check if pool with this name already exists — update it
+  const idx = lib.findIndex(p => p.poolName.toLowerCase() === name.toLowerCase());
+  if (idx >= 0) {
+    lib[idx] = { ...state, savedAt: now };
+  } else {
+    lib.push({ ...state, savedAt: now });
+  }
+  setLibrary(lib);
+
+  // Flash feedback
+  const btn = document.querySelector('.bar-btn.save');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '&#10003; Saved';
+  btn.style.background = '#1e8e3e';
+  btn.style.borderColor = '#1e8e3e';
+  btn.style.color = 'white';
+  setTimeout(() => { btn.innerHTML = orig; btn.style.background = ''; btn.style.borderColor = ''; btn.style.color = ''; }, 1200);
+}
+
+function openLibrary() {
+  const lib = getLibrary();
+  const body = document.getElementById('libraryBody');
+  if (lib.length === 0) {
+    body.innerHTML = '<div class="lib-empty">No saved pools yet.<br>Name a pool and click <strong>Save</strong> to start your library.</div>';
+  } else {
+    let html = '';
+    lib.sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+    lib.forEach((p, i) => {
+      const date = p.savedAt ? new Date(p.savedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Unknown';
+      const circuitCount = (p.circuits || []).length;
+      const vol = p.poolVolume || '—';
+      html += `<div class="lib-item">
+        <div class="li-info">
+          <div class="li-name">${escHtml(p.poolName)}</div>
+          <div class="li-meta">${vol} gal &bull; ${circuitCount} circuit${circuitCount !== 1 ? 's' : ''} &bull; Saved ${date}</div>
+        </div>
+        <div class="li-actions">
+          <button class="li-btn load" onclick="loadPool(${i})">Load</button>
+          <button class="li-btn del" onclick="deletePool(${i})">Delete</button>
+        </div>
+      </div>`;
+    });
+    body.innerHTML = html;
+  }
+  document.getElementById('libraryOverlay').classList.add('open');
+}
+
+function closeLibrary() {
+  document.getElementById('libraryOverlay').classList.remove('open');
+}
+
+function loadPool(index) {
+  const lib = getLibrary();
+  lib.sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+  if (lib[index]) {
+    restoreState(lib[index]);
+    closeLibrary();
+  }
+}
+
+function deletePool(index) {
+  const lib = getLibrary();
+  lib.sort((a, b) => (b.savedAt || '').localeCompare(a.savedAt || ''));
+  const name = lib[index]?.poolName || 'this pool';
+  if (confirm(`Delete "${name}" from the library?`)) {
+    lib.splice(index, 1);
+    // Re-sort before saving (already sorted)
+    setLibrary(lib);
+    openLibrary(); // refresh
+  }
+}
+
+function newPool() {
+  if (document.getElementById('poolName').value.trim() && circuits.some(c => c.pipeRuns.some(r => r.length > 0))) {
+    if (!confirm('Start a new pool? Unsaved changes will be lost.')) return;
+  }
+  document.getElementById('poolName').value = '';
+  document.getElementById('poolVolume').value = 20000;
+  document.getElementById('turnoverHrs').value = 8;
+  document.getElementById('staticHead').value = 0;
+  circuits = [];
+  activeCircuit = 0;
+  circuits.push(createCircuit('Main Filter', 'main'));
+  calcFlowRate();
+  renderAll();
+  document.getElementById('resultsCard').style.display = 'none';
+  document.getElementById('poolName').focus();
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ══════════════════════════════════════════════════════════════
+// PLUMBING COST ESTIMATOR
+// ══════════════════════════════════════════════════════════════
+
+const PLUMB_PRICES = {
+  basePackages: [
+    { id: 'base_pool',      label: 'Base Pool (incl 20ft 2" pipe, 1 skimmer, 1 MD, 1 vac, up to 6 returns, autofill, pump, filter, 2 3-way valves)', price: 2400 },
+    { id: 'base_spa_w_pool', label: 'Base Spa w/ Pool (6 jets, up to 20ft, jet+air+MD lines)', price: 1800 },
+    { id: 'base_spa_only',  label: 'Spa Only (6 jets, up to 20ft, skimmer, 2 returns)', price: 2100 },
+    { id: 'base_infloor',   label: 'Base In-Floor (up to 10 runs & 12 heads)', price: 1200 }
+  ],
+  pipePerLF: {
+    '0.75': 5, '1.5': 6, '2': 7, '2.5': 8, '3': 10, '4': 13
+  },
+  additionals: [
+    { id: 'addl_pipe_over20',     label: 'Additional plumbing run over 20ft (2") /ft', price: 18, unit: 'ft' },
+    { id: 'addl_skimmer_labor',   label: 'Additional skimmer (labor)', price: 60, unit: 'ea' },
+    { id: 'addl_return',          label: 'Additional return', price: 40, unit: 'ea' },
+    { id: 'addl_autofill_over20', label: 'Additional autofill run over 20ft /ft', price: 5, unit: 'ft' },
+    { id: 'addl_autofill_trench', label: 'Digging separate trench for autofill /ft', price: 3, unit: 'ft' },
+    { id: 'addl_spa_over20',      label: 'Additional spa plumbing over 20ft /ft', price: 15, unit: 'ft' },
+    { id: 'addl_jets_over6',      label: 'Additional jets over 6', price: 60, unit: 'ea' },
+    { id: 'addl_skimmer_install', label: 'Additional skimmer install', price: 40, unit: 'ea' },
+    { id: 'addl_vac_run',         label: 'Vac run 2" /LF', price: 7, unit: 'ft' },
+    { id: 'infloor_over10',       label: 'In-Floor actuator to pool over 10ft (up to 6 lines) /ft', price: 27, unit: 'ft' },
+    { id: 'infloor_addl_line',    label: 'In-Floor additional line /ft', price: 5, unit: 'ft' },
+    { id: 'infloor_double_act',   label: 'In-Floor double actuator', price: 1500, unit: 'ea' },
+    { id: 'infloor_extra_heads',  label: 'In-Floor extra heads over 12', price: 50, unit: 'ea' },
+    { id: 'sand_over50',          label: 'Sand over 50ft /LF', price: 3, unit: 'ft' }
+  ],
+  suction: [
+    { id: 'suction_2_base',     label: '2" Suction Line (base up to 20ft)',     price: 150, unit: 'ea' },
+    { id: 'suction_2_over',     label: '2" Suction Line over 20ft /ft',         price: 7,   unit: 'ft' },
+    { id: 'suction_2.5_base',   label: '2.5" Suction Line (base up to 20ft)',   price: 200, unit: 'ea' },
+    { id: 'suction_2.5_over',   label: '2.5" Suction Line over 20ft /ft',       price: 8,   unit: 'ft' },
+    { id: 'suction_3_base',     label: '3" Suction Line (base up to 20ft)',     price: 280, unit: 'ea' },
+    { id: 'suction_3_over',     label: '3" Suction Line over 20ft /ft',         price: 10,  unit: 'ft' },
+    { id: 'suction_4_base',     label: '4" Suction Line (base up to 20ft)',     price: 380, unit: 'ea' },
+    { id: 'suction_4_over',     label: '4" Suction Line over 20ft /ft',         price: 13,  unit: 'ft' }
+  ],
+  gasLines: [
+    { id: 'gas_0.75_base',  label: '3/4" Gas Line (base up to 20ft)', price: 650, unit: 'ea' },
+    { id: 'gas_0.75_over',  label: '3/4" Gas over 20ft /ft',          price: 9,   unit: 'ft' },
+    { id: 'gas_1_base',     label: '1" Gas Line (base up to 20ft)',   price: 700, unit: 'ea' },
+    { id: 'gas_1_over',     label: '1" Gas over 20ft /ft',            price: 10,  unit: 'ft' },
+    { id: 'gas_1.5_base',   label: '1.5" Gas Line (base up to 20ft)', price: 800, unit: 'ea' },
+    { id: 'gas_1.5_over',   label: '1.5" Gas over 20ft /ft',          price: 12,  unit: 'ft' },
+    { id: 'gas_2_base',     label: '2" Gas Line (base up to 20ft)',   price: 900, unit: 'ea' },
+    { id: 'gas_2_over',     label: '2" Gas over 20ft /ft',            price: 15,  unit: 'ft' },
+    { id: 'gas_firepit_stub',   label: 'Fire Pit Stub',                price: 150, unit: 'ea' },
+    { id: 'gas_bbq_stub',       label: '3/4" BBQ Stub w/ Valve',       price: 150, unit: 'ea' },
+    { id: 'gas_firepot_install', label: 'Fire Pot Install (key valve inc.)', price: 170, unit: 'ea' },
+    { id: 'gas_stub_075',       label: '3/4" Gas Stub',                price: 150, unit: 'ea' },
+    { id: 'gas_firepot_stub',   label: '3/4" Fire Pot Stub inc. Valve', price: 170, unit: 'ea' },
+    { id: 'gas_bbq_hookup',     label: 'BBQ Hook-up',                  price: 150, unit: 'ea' },
+    { id: 'gas_firepit_hookup', label: 'Fire Pit Hook-up (key valve, lava rock, fire ring)', price: 300, unit: 'ea' },
+    { id: 'gas_regulator',      label: 'Install Gas Regulator',        price: 150, unit: 'ea' }
+  ],
+  equipment: [
+    { id: 'equip_full',       label: 'Install Equip (Filter, Heater, Pump, Canister, Naturator)', price: 800, unit: 'ea' },
+    { id: 'equip_heater',     label: 'Extra Heater Install',          price: 250, unit: 'ea' },
+    { id: 'equip_filter',     label: 'Extra Filter Install',          price: 120, unit: 'ea' },
+    { id: 'equip_pump',       label: 'Extra Pump Install',            price: 150, unit: 'ea' },
+    { id: 'equip_ozone',      label: 'Install Ozoneator',             price: 150, unit: 'ea' },
+    { id: 'equip_naturator',  label: 'Install Naturator 2',           price: 150, unit: 'ea' },
+    { id: 'equip_rainbow',    label: 'Install Rainbow Chlorinator',   price: 150, unit: 'ea' },
+    { id: 'equip_intellichlor', label: 'Install Intellichlor Salt Gen', price: 150, unit: 'ea' },
+    { id: 'equip_leaf_can',   label: 'Install Leaf Canister (D.E)',   price: 150, unit: 'ea' },
+    { id: 'equip_venturi',    label: 'Install Venturi-tee',           price: 150, unit: 'ea' },
+    { id: 'equip_autofill',   label: 'Install Autofill',              price: 150, unit: 'ea' },
+    { id: 'equip_deckchlor',  label: 'Deck Chlor Install (up to 20ft)', price: 120, unit: 'ea' },
+    { id: 'equip_deckchlor_over', label: 'Deck Chlor run over 20ft 3/4" /ft', price: 5, unit: 'ft' },
+    { id: 'equip_cascade',    label: 'Custom Cascade Connecting',     price: 85,  unit: 'ea' },
+    { id: 'equip_degas',      label: 'Install Degassing Vessel',      price: 120, unit: 'ea' },
+    { id: 'equip_skimmer',    label: 'Install Skimmer',               price: 30,  unit: 'ea' },
+    { id: 'equip_dug_skimmer', label: 'Dug for Skimmer',              price: 70,  unit: 'ea' },
+    { id: 'equip_pvb',        label: 'PVB Valve Install',             price: 100, unit: 'ea' },
+    { id: 'equip_prayer',     label: 'High Temp Prayer Union Install', price: 17.50, unit: 'ea' },
+    { id: 'equip_water_bond', label: 'Water Bond Install',            price: 40,  unit: 'ea' },
+    { id: 'equip_hydro',      label: 'Hydro Relief Valve Install',    price: 150, unit: 'ea' }
+  ],
+  valves: [
+    { id: 'valve_3way_install',   label: '3-Way Valve Install',       price: 75,  unit: 'ea' },
+    { id: 'valve_3way_supply',    label: 'Supply 3-Way Valve',        price: 100, unit: 'ea' },
+    { id: 'valve_2way_install',   label: '2-Way Valve Install',       price: 65,  unit: 'ea' },
+    { id: 'valve_2way_supply',    label: 'Supply 2-Way Valve',        price: 75,  unit: 'ea' },
+    { id: 'valve_check_install',  label: 'Check Valve Install',       price: 40,  unit: 'ea' },
+    { id: 'valve_check_supply',   label: 'Supply Check Valve',        price: 75,  unit: 'ea' },
+    { id: 'valve_ball_075_inst',  label: '3/4" Ball Valve Install',   price: 15,  unit: 'ea' },
+    { id: 'valve_ball_075_sup',   label: 'Supply 3/4" Ball Valve',    price: 10,  unit: 'ea' },
+    { id: 'valve_ball_1.5_inst',  label: '1.5" Ball Valve Install',   price: 20,  unit: 'ea' },
+    { id: 'valve_ball_1.5_sup',   label: 'Supply 1.5" Ball Valve',    price: 10.11, unit: 'ea' },
+    { id: 'valve_ball_2_inst',    label: '2" Ball Valve Install',     price: 50,  unit: 'ea' },
+    { id: 'valve_ball_2_sup',     label: 'Supply 2" Ball Valve',      price: 18.92, unit: 'ea' },
+    { id: 'valve_ball_3_inst',    label: '3" Ball Valve Install',     price: 100, unit: 'ea' },
+    { id: 'valve_ball_3_sup',     label: 'Supply 3" Ball Valve',      price: 68.36, unit: 'ea' },
+    { id: 'valve_ball_4_inst',    label: '4" Ball Valve Install',     price: 100, unit: 'ea' },
+    { id: 'valve_ball_4_sup',     label: 'Supply 4" Ball Valve',      price: 150, unit: 'ea' }
+  ],
+  specialty: [
+    { id: 'spec_solar_stub',     label: 'Solar Stub (labor only, no valves)', price: 120, unit: 'ea' },
+    { id: 'spec_solar_run',      label: 'Solar Run 2.0" /ft',        price: 10,  unit: 'ft' },
+    { id: 'spec_deck_jet',       label: 'Install Deck Jets',         price: 75,  unit: 'ea' },
+    { id: 'spec_waterfall_pipe', label: 'Run 1.5" Pipe for Waterfall /ft', price: 6, unit: 'ft' },
+    { id: 'spec_sheer_descent',  label: 'Sheer Descent Hook-up',     price: 100, unit: 'ea' },
+    { id: 'spec_slab_24x24',     label: '24x24 Concrete Slab (install)', price: 55, unit: 'ea' },
+    { id: 'spec_slab_24x24_sup', label: 'Supply 24x24 Concrete Slab', price: 40, unit: 'ea' },
+    { id: 'spec_slab_24x36',     label: '24x36 Concrete Slab',       price: 65, unit: 'ea' },
+    { id: 'spec_alarm_8',        label: 'Install up to 8 Alarms',    price: 100, unit: 'ea' },
+    { id: 'spec_alarm_over8',    label: 'Install Alarms over 8 /ea', price: 10,  unit: 'ea' },
+    { id: 'spec_alarm_batt',     label: 'Supply batteries',          price: 3,   unit: 'ea' }
+  ],
+  labor: [
+    { id: 'labor_tunnel',     label: 'Tunneling /LF',                price: 10,  unit: 'ft' },
+    { id: 'labor_dig_hand',   label: 'Digging by hand /ft',          price: 8,   unit: 'ft' },
+    { id: 'labor_dig_machine', label: 'Digging with machine /ft',    price: 5,   unit: 'ft' },
+    { id: 'labor_jackhammer', label: 'Jack Hammer on Hard Soil /hr', price: 200, unit: 'hr' },
+    { id: 'labor_service',    label: 'Service Call',                 price: 350, unit: 'ea' }
+  ],
+  conduit: [
+    { id: 'cond_075', label: '3/4" Electrical Conduit /LF', price: 3.50, unit: 'ft' },
+    { id: 'cond_1',   label: '1" Electrical Conduit /LF',   price: 4.50, unit: 'ft' },
+    { id: 'cond_1.25', label: '1-1/4" Electrical Conduit /LF', price: 5.50, unit: 'ft' },
+    { id: 'cond_2',   label: '2" Electrical Conduit /LF',   price: 9.00, unit: 'ft' }
+  ]
+};
+
+// ── Render helpers ──
+function costRow(item, qty) {
+  qty = qty || 0;
+  const rowId = 'crow_' + item.id;
+  return `<div id="${rowId}" style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--gray-200);font-size:13px;">
+    <div style="flex:1;color:var(--gray-700);">${escHtml(item.label)}</div>
+    <div style="color:var(--gray-500);width:70px;text-align:right;">$${item.price.toFixed(2)}</div>
+    <div style="width:16px;text-align:center;color:var(--gray-400);font-size:11px;">&times;</div>
+    <input type="number" min="0" step="any" value="${qty}" data-price="${item.price}" data-row="${item.id}"
+      onchange="recalcCost()" oninput="recalcCost()"
+      style="width:65px;padding:4px 6px;border:1px solid var(--gray-300);border-radius:4px;text-align:center;font-size:13px;">
+    <div style="width:80px;text-align:right;font-weight:600;color:var(--gray-800);" id="tot_${item.id}">$${(item.price * qty).toFixed(2)}</div>
+  </div>`;
+}
+
+function renderSection(containerId, items, qtyMap) {
+  qtyMap = qtyMap || {};
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = items.map(item => costRow(item, qtyMap[item.id] || 0)).join('');
+}
+
+function renderPipeFootage(qtyMap) {
+  const el = document.getElementById('costPipeFootage');
+  if (!el) return;
+  const sizes = [
+    { id: 'pipe_075', label: '3/4" PVC /LF', price: 5, size: '0.75' },
+    { id: 'pipe_1.5', label: '1.5" PVC /LF', price: 6, size: '1.5' },
+    { id: 'pipe_2',   label: '2" PVC /LF',   price: 7, size: '2' },
+    { id: 'pipe_2.5', label: '2.5" PVC /LF', price: 8, size: '2.5' },
+    { id: 'pipe_3',   label: '3" PVC /LF',   price: 10, size: '3' },
+    { id: 'pipe_4',   label: '4" PVC /LF',   price: 13, size: '4' }
+  ];
+  qtyMap = qtyMap || {};
+  el.innerHTML = sizes.map(s => costRow(s, qtyMap[s.id] || 0)).join('');
+}
+
+// ── Initialize all sections ──
+function initCostEstimator() {
+  renderSection('costBasePackages', PLUMB_PRICES.basePackages);
+  renderPipeFootage();
+  renderSection('costAdditionals', PLUMB_PRICES.additionals);
+  renderSection('costSuction', PLUMB_PRICES.suction);
+  renderSection('costGas', PLUMB_PRICES.gasLines);
+  renderSection('costEquipment', PLUMB_PRICES.equipment);
+  renderSection('costValves', PLUMB_PRICES.valves);
+  renderSection('costSpecialty', PLUMB_PRICES.specialty);
+  renderSection('costLabor', PLUMB_PRICES.labor);
+  renderSection('costConduit', PLUMB_PRICES.conduit);
+  recalcCost();
+}
+
+// ── Recalculate all costs ──
+function recalcCost() {
+  let grand = 0;
+  document.querySelectorAll('#costBody input[data-price]').forEach(inp => {
+    const price = parseFloat(inp.dataset.price) || 0;
+    const qty = parseFloat(inp.value) || 0;
+    const lineTotal = price * qty;
+    grand += lineTotal;
+    const totEl = document.getElementById('tot_' + inp.dataset.row);
+    if (totEl) totEl.textContent = '$' + lineTotal.toFixed(2);
+  });
+  document.getElementById('costGrandTotal').textContent = '$' + grand.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ── Sync from circuits array ──
+function syncFromCircuits() {
+  if (!circuits || circuits.length === 0) {
+    document.getElementById('syncStatus').textContent = 'No circuits found. Add circuits above first.';
+    return;
+  }
+
+  function setQty(rowId, val) {
+    const inp = document.querySelector(`input[data-row="${rowId}"]`);
+    if (inp && val > 0) inp.value = val;
+  }
+  function getQty(rowId) {
+    const inp = document.querySelector(`input[data-row="${rowId}"]`);
+    return inp ? (parseFloat(inp.value) || 0) : 0;
+  }
+
+  // ── 1. Sum raw pipe footage by diameter across ALL circuits ──
+  const rawPipeTotals = {};
+  circuits.forEach(c => {
+    (c.pipeRuns || []).forEach(pr => {
+      const dia = pr.diameter;
+      const len = parseFloat(pr.length) || 0;
+      rawPipeTotals[dia] = (rawPipeTotals[dia] || 0) + len;
+    });
+  });
+
+  // ── 2. Detect what's in the circuits ──
+  let totalThreeWay = 0, totalCheckValve = 0, totalBallValve = 0;
+  let hasFilter = false, hasHeater = false, hasPump = false, hasSalt = false, hasOzone = false;
+  let hasInFloor = false, hasSolarPanels = false, hasWaterFeature = false;
+  const hasSpaJets = circuits.some(c => c.spaJets && c.spaJets.enabled);
+  const hasMainCircuit = circuits.some(c => c.type === 'main');
+
+  circuits.forEach(c => {
+    const fittings = c.fittings || {};
+    totalThreeWay += parseInt(fittings.three_way_valve) || 0;
+    totalCheckValve += parseInt(fittings.check_valve) || 0;
+    totalBallValve += parseInt(fittings.ball_valve) || 0;
+
+    const equip = c.equipment || {};
+    if (equip.cartridge_filter || equip.sand_filter || equip.de_filter) hasFilter = true;
+    if (equip.heater_gas || equip.heater_electric) hasHeater = true;
+    if (equip.vsp_pump) hasPump = true;
+    if (equip.salt_cell) hasSalt = true;
+    if (equip.ozone) hasOzone = true;
+    if (equip.in_floor_clean) hasInFloor = true;
+    if (equip.solar_panels) hasSolarPanels = true;
+    if (equip.water_feature) hasWaterFeature = true;
+  });
+
+  // ── 3. Auto-set base packages ──
+  // Only set base pool if there's a main circuit. Never auto-set spa — user chooses.
+  if (hasMainCircuit) setQty('base_pool', 1);
+  if (hasInFloor) setQty('base_infloor', 1);
+  // NOTE: Spa packages are NOT auto-set. User selects spa base manually if needed.
+
+  // ── 4. Calculate included pipe footage from selected base packages ──
+  // Base Pool includes 20ft of 2" pipe. Base Spa (w/ pool or only) includes 20ft.
+  // We subtract included footage from the per-LF pipe charges so you only pay overage.
+  let includedFt = { '2': 0 };  // keyed by diameter
+
+  // Check what base packages are selected (including any the user manually set)
+  const basePoolQty = getQty('base_pool') || (hasMainCircuit ? 1 : 0);
+  const baseSpaPoolQty = getQty('base_spa_w_pool');
+  const baseSpaOnlyQty = getQty('base_spa_only');
+
+  if (basePoolQty > 0)    includedFt['2'] += 20;  // Base pool includes 20ft of 2"
+  if (baseSpaPoolQty > 0)  includedFt['2'] += 20;  // Base spa w/ pool includes 20ft
+  if (baseSpaOnlyQty > 0)  includedFt['2'] += 20;  // Base spa only includes 20ft
+
+  // ── 5. Set pipe footage = raw total minus included, floored at 0 ──
+  const pipeSizes = [
+    { dia: '0.75', key: 'pipe_075' },
+    { dia: '1.5',  key: 'pipe_1.5' },
+    { dia: '2',    key: 'pipe_2' },
+    { dia: '2.5',  key: 'pipe_2.5' },
+    { dia: '3',    key: 'pipe_3' },
+    { dia: '4',    key: 'pipe_4' }
+  ];
+  let syncNotes = [];
+  pipeSizes.forEach(ps => {
+    const raw = rawPipeTotals[ps.dia] || 0;
+    const incl = includedFt[ps.dia] || 0;
+    const billable = Math.max(0, Math.round(raw - incl));
+    const inp = document.querySelector(`#costPipeFootage input[data-row="${ps.key}"]`);
+    if (inp) inp.value = billable;
+    if (incl > 0 && raw > 0) {
+      syncNotes.push(`${ps.dia}" pipe: ${Math.round(raw)}ft total, ${incl}ft included in base → ${billable}ft billed`);
+    }
+  });
+
+  // ── 6. Handle overage lines for base packages ──
+  // Base pool includes 20ft — overage on the pool plumbing run at $18/ft
+  if (basePoolQty > 0) {
+    const raw2 = rawPipeTotals['2'] || 0;
+    const poolOverage = Math.max(0, Math.round(raw2 - 20));
+    // The "additional plumbing run over 20'" line covers the base pool overage
+    // Only set if there's actual overage
+    if (poolOverage > 0) setQty('addl_pipe_over20', poolOverage);
+  }
+
+  // ── 7. Valves ──
+  setQty('valve_3way_install', totalThreeWay);
+  setQty('valve_3way_supply', totalThreeWay);
+  setQty('valve_check_install', totalCheckValve);
+  setQty('valve_check_supply', totalCheckValve);
+
+  // ── 8. Equipment installs ──
+  if (hasFilter || hasHeater || hasPump) setQty('equip_full', 1);
+  if (hasSalt) setQty('equip_intellichlor', 1);
+  if (hasOzone) setQty('equip_ozone', 1);
+  if (hasSolarPanels) setQty('spec_solar_stub', 1);
+  if (hasWaterFeature) setQty('spec_sheer_descent', 1);
+
+  // ── 9. Spa jets over 6 (only if user has selected a spa package) ──
+  if (baseSpaPoolQty > 0 || baseSpaOnlyQty > 0) {
+    circuits.forEach(c => {
+      if (c.spaJets && c.spaJets.enabled) {
+        const jc = parseInt(c.spaJets.count) || 0;
+        if (jc > 6) setQty('addl_jets_over6', jc - 6);
+      }
+    });
+  }
+
+  recalcCost();
+
+  // Status message with included-footage notes
+  let msg = 'Synced ' + circuits.length + ' circuit(s) at ' + new Date().toLocaleTimeString();
+  if (syncNotes.length) msg += ' — ' + syncNotes.join('; ');
+  document.getElementById('syncStatus').textContent = msg;
+}
+
+// ── Copy summary to clipboard ──
+function copyCostSummary() {
+  let lines = ['PLUMBING COST ESTIMATE', '═'.repeat(40), ''];
+  let grand = 0;
+
+  document.querySelectorAll('#costBody input[data-price]').forEach(inp => {
+    const qty = parseFloat(inp.value) || 0;
+    if (qty > 0) {
+      const price = parseFloat(inp.dataset.price) || 0;
+      const lineTotal = price * qty;
+      grand += lineTotal;
+      const label = inp.closest('div[id^="crow_"]')?.querySelector('div')?.textContent || inp.dataset.row;
+      lines.push(`${label}  x${qty}  = $${lineTotal.toFixed(2)}`);
+    }
+  });
+
+  lines.push('');
+  lines.push('═'.repeat(40));
+  lines.push('TOTAL: $' + grand.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+
+  navigator.clipboard.writeText(lines.join('\n')).then(() => {
+    const btn = document.querySelector('#costBody button[onclick*="copyCostSummary"]');
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.innerHTML = '&#128203; Copy Summary'; }, 2000); }
+  });
+}
+
+// ── Reset all cost inputs ──
+function resetCostEstimator() {
+  document.querySelectorAll('#costBody input[data-price]').forEach(inp => { inp.value = 0; });
+  recalcCost();
+  document.getElementById('syncStatus').textContent = '';
+}
+
+// ══════════════════════════════════════════════════════════════
+// FILTER & PUMP SIZING CALCULATOR
+// PHTA Builder's Manual 5th Ed, Chapter 5, Tables 5-34/5-35
+// ══════════════════════════════════════════════════════════════
+
+// Complete lookup tables from manual pages 224-225
+const FILTER_TABLES = {
+  sand: {
+    label: 'High-Rate Sand',
+    rate: 15, // gpm per sq ft
+    // [diameter_inches, num_filters, area_sqft, flow_gpm, cap_6hr, cap_8hr, cap_12hr]
+    models: [
+      [15,1, 1.23, 18, 6500, 9000, 13500],
+      [18,1, 1.77, 27, 9500, 12500, 19000],
+      [21,1, 2.41, 36, 13000, 17500, 26000],
+      [24,1, 3.14, 47, 17000, 22500, 34000],
+      [30,1, 4.91, 74, 26500, 35500, 53000],
+      [30,2, 9.82, 147, 53000, 70500, 106000],
+      [36,1, 7.07, 106, 38000, 51000, 76500],
+      [36,2, 14.14, 212, 76500, 102000, 152500],
+      [36,3, 21.21, 318, 114500, 152500, 229000],
+      [42,1, 9.62, 144, 52000, 69500, 104000],
+      [42,2, 19.24, 289, 104000, 138500, 208000],
+      [42,3, 28.86, 433, 156000, 208000, 311500],
+      [48,1, 12.57, 188, 68000, 90500, 135500],
+      [48,2, 25.13, 377, 135500, 181000, 271500],
+      [48,3, 37.70, 565, 203500, 271500, 407000],
+      [54,1, 15.90, 239, 86000, 114500, 172000],
+      [54,2, 31.81, 477, 172000, 229000, 343500],
+      [54,3, 47.71, 716, 257500, 343500, 515500],
+      [60,1, 19.63, 295, 106000, 141500, 212000],
+      [60,2, 39.27, 589, 212000, 282500, 424000],
+      [60,3, 58.90, 884, 318000, 424000, 636000]
+    ]
+  },
+  de: {
+    label: 'Diatomaceous Earth (DE)',
+    rate: 2, // gpm per sq ft
+    // [area_sqft, flow_gpm, cap_6hr, cap_8hr, cap_12hr]
+    models: [
+      [10, 20, 7000, 9500, 14500],
+      [15, 30, 11000, 14500, 21500],
+      [20, 40, 14500, 19000, 29000],
+      [25, 50, 18000, 24000, 36000],
+      [30, 60, 21500, 29000, 43000],
+      [35, 70, 25000, 33500, 50500],
+      [40, 80, 29000, 38500, 57500],
+      [50, 100, 36000, 48000, 72000],
+      [60, 120, 43000, 57500, 86500],
+      [70, 140, 50500, 67000, 101000],
+      [80, 160, 57500, 77000, 115000],
+      [90, 180, 65000, 86500, 129500],
+      [100, 200, 72000, 96000, 144000],
+      [125, 250, 90000, 120000, 180000],
+      [150, 300, 108000, 144000, 216000],
+      [175, 350, 126000, 168000, 252000],
+      [200, 400, 144000, 192000, 288000],
+      [225, 450, 162000, 216000, 324000],
+      [250, 500, 180000, 240000, 360000],
+      [275, 550, 198000, 264000, 396000],
+      [300, 600, 216000, 288000, 432000],
+      [400, 800, 288000, 384000, 576000],
+      [450, 900, 324000, 432000, 648000]
+    ]
+  },
+  cartridge: {
+    label: 'Cartridge',
+    rate: 0.375, // gpm per sq ft
+    // [area_sqft, flow_gpm, cap_6hr, cap_8hr, cap_12hr]
+    models: [
+      [50, 18.8, 6500, 9000, 13500],
+      [75, 28.1, 10000, 13500, 20000],
+      [100, 37.5, 13500, 18000, 27000],
+      [125, 46.9, 17000, 22500, 33500],
+      [150, 56.3, 20000, 27000, 40500],
+      [175, 65.6, 23500, 31500, 47000],
+      [200, 75, 27000, 36000, 54000],
+      [225, 84, 30500, 40500, 60500],
+      [250, 94, 33500, 45000, 67500],
+      [275, 103, 37000, 49500, 74000],
+      [300, 113, 40500, 54000, 81000],
+      [325, 122, 44000, 58500, 87500],
+      [350, 131, 47000, 63000, 94500],
+      [375, 141, 50500, 67500, 101000],
+      [400, 150, 54000, 72000, 108000],
+      [425, 159, 57500, 76500, 114500],
+      [450, 169, 60500, 81000, 121500],
+      [475, 178, 64000, 85500, 128000],
+      [500, 188, 67500, 90000, 135000],
+      [525, 197, 71000, 94500, 141500],
+      [550, 206, 74000, 99000, 148500],
+      [575, 216, 77500, 103500, 155000],
+      [600, 225, 81000, 108000, 162000]
+    ]
+  }
+};
+
+// Velocity = 0.4085 × GPM / (pipe_ID_inches)²  (from manual p226)
+const PIPE_IDS = {
+  '1.5': 1.610, '2': 2.067, '2.5': 2.469, '3': 3.068, '4': 4.026
+};
+
+function filterVelocityFPS(gpm, pipeIdInches) {
+  return (0.4085 * gpm) / (pipeIdInches * pipeIdInches);
+}
+
+function syncFilterInputs() {
+  const vol = parseFloat(document.getElementById('poolVolume').value) || 0;
+  const hrs = parseFloat(document.getElementById('turnoverHrs').value) || 8;
+  document.getElementById('fltPoolGal').value = vol;
+  document.getElementById('fltTurnover').value = hrs;
+
+  // Try to detect filter type from circuits equipment
+  let detectedType = null;
+  circuits.forEach(c => {
+    const eq = c.equipment || {};
+    if (eq.de_filter) detectedType = 'de';
+    else if (eq.sand_filter && !detectedType) detectedType = 'sand';
+    else if (eq.cartridge_filter && !detectedType) detectedType = 'cartridge';
+  });
+  if (detectedType) document.getElementById('fltType').value = detectedType;
+
+  calcFilter();
+  document.getElementById('filterSyncStatus').textContent =
+    'Synced: ' + vol.toLocaleString() + ' gal, ' + hrs + ' hr turnover' +
+    (detectedType ? ', ' + FILTER_TABLES[detectedType].label + ' filter' : '') +
+    ' — ' + new Date().toLocaleTimeString();
+}
+
+function calcFilter() {
+  const gal = parseFloat(document.getElementById('fltPoolGal').value) || 0;
+  const hrs = parseFloat(document.getElementById('fltTurnover').value) || 8;
+  const type = document.getElementById('fltType').value;
+  const tbl = FILTER_TABLES[type];
+
+  if (gal <= 0) {
+    document.getElementById('filterResults').style.display = 'none';
+    return;
+  }
+  document.getElementById('filterResults').style.display = '';
+
+  // Required flow rate
+  const reqGPM = gal / (hrs * 60);
+  document.getElementById('fltReqFlow').textContent = reqGPM.toFixed(1);
+
+  // Minimum filter area
+  const minArea = reqGPM / tbl.rate;
+  document.getElementById('fltMinArea').textContent = minArea.toFixed(1);
+
+  // Detect the smallest pipe diameter from user's circuits (worst-case velocity)
+  let smallestPipe = '2'; // fallback default
+  if (circuits && circuits.length > 0) {
+    let smallest = 99;
+    circuits.forEach(c => {
+      (c.pipeRuns || []).forEach(r => {
+        const d = parseFloat(r.diameter);
+        if (d > 0 && d < smallest) smallest = d;
+      });
+    });
+    if (smallest < 99) smallestPipe = String(smallest);
+  }
+  const pipeID = PIPE_IDS[smallestPipe] || PIPE_IDS['2'];
+
+  // Design velocity in user's pipe size
+  const velPipe = filterVelocityFPS(reqGPM, pipeID);
+  document.getElementById('fltVelocity').textContent = velPipe.toFixed(1);
+  document.getElementById('fltVelLabel').textContent = 'ft/sec in ' + smallestPipe + '" pipe';
+
+  // Velocity warning
+  const velWarn = document.getElementById('fltVelWarn');
+  if (velPipe > 8) {
+    velWarn.style.display = '';
+    velWarn.style.background = '';
+    velWarn.style.borderColor = '';
+    velWarn.style.color = '';
+    velWarn.innerHTML = '<strong>⚠ High velocity:</strong> ' + velPipe.toFixed(1) + ' ft/s in ' + smallestPipe + '" pipe exceeds recommended 8 ft/s max. Consider upsizing pipe on the suction/return lines.';
+  } else if (velPipe > 6) {
+    velWarn.style.display = '';
+    velWarn.innerHTML = '<strong>Note:</strong> ' + velPipe.toFixed(1) + ' ft/s in ' + smallestPipe + '" pipe is within limits but on the higher side. Ideal range is 4–6 ft/s for quieter operation and lower friction loss.';
+    velWarn.style.background = '#e8f5e9';
+    velWarn.style.borderColor = '#4caf50';
+    velWarn.style.color = '#2e7d32';
+  } else {
+    velWarn.style.display = 'none';
+  }
+
+  // ANSI compliance check (residential = max 12 hr, common standard = 6-8 hr)
+  const compEl = document.getElementById('fltCompliant');
+  const compNote = document.getElementById('fltCompNote');
+  if (hrs <= 6) {
+    compEl.textContent = '✓';
+    compEl.style.color = 'var(--green)';
+    compNote.textContent = hrs + ' hr ≤ 6 hr (exceeds standard)';
+  } else if (hrs <= 8) {
+    compEl.textContent = '✓';
+    compEl.style.color = 'var(--green)';
+    compNote.textContent = hrs + ' hr ≤ 8 hr (standard residential)';
+  } else if (hrs <= 12) {
+    compEl.textContent = '✓';
+    compEl.style.color = '#f9a825';
+    compNote.textContent = hrs + ' hr ≤ 12 hr (ANSI min for residential)';
+  } else {
+    compEl.textContent = '✗';
+    compEl.style.color = '#d93025';
+    compNote.textContent = hrs + ' hr exceeds 12 hr ANSI max';
+  }
+
+  // ── Find matching filters from lookup tables ──
+  // Determine which capacity column to use based on turnover
+  let capIdx; // index into model array for the capacity column
+  if (hrs <= 6) capIdx = 'cap6';
+  else if (hrs <= 8) capIdx = 'cap8';
+  else capIdx = 'cap12';
+
+  const matchEl = document.getElementById('fltMatches');
+  let matches = [];
+
+  if (type === 'sand') {
+    // Sand: [dia, num, area, flow, cap6, cap8, cap12]
+    tbl.models.forEach(m => {
+      const cap = capIdx === 'cap6' ? m[4] : capIdx === 'cap8' ? m[5] : m[6];
+      if (cap >= gal) {
+        matches.push({
+          label: m[0] + '" × ' + m[1] + (m[1] > 1 ? ' filters' : ' filter'),
+          area: m[2],
+          flow: m[3],
+          cap: cap,
+          headroom: ((cap - gal) / gal * 100).toFixed(0)
+        });
+      }
+    });
+  } else {
+    // DE and Cartridge: [area, flow, cap6, cap8, cap12]
+    tbl.models.forEach(m => {
+      const cap = capIdx === 'cap6' ? m[2] : capIdx === 'cap8' ? m[3] : m[4];
+      if (cap >= gal) {
+        matches.push({
+          label: m[0] + ' sq ft',
+          area: m[0],
+          flow: m[1],
+          cap: cap,
+          headroom: ((cap - gal) / gal * 100).toFixed(0)
+        });
+      }
+    });
+  }
+
+  if (matches.length === 0) {
+    matchEl.innerHTML = '<div style="padding:10px;background:#ffebee;border-radius:6px;color:#c62828;">No single filter configuration in the PHTA tables covers ' + gal.toLocaleString() + ' gallons at ' + hrs + '-hr turnover. Consider multiple filters or a larger custom system.</div>';
+  } else {
+    // Show first match (smallest that works) + next 2 as options
+    const show = matches.slice(0, 5);
+    let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    html += '<tr style="background:var(--gray-100);font-weight:600;"><td style="padding:6px 10px;">Filter Size</td><td style="padding:6px 10px;text-align:right;">Area</td><td style="padding:6px 10px;text-align:right;">Flow</td><td style="padding:6px 10px;text-align:right;">Capacity</td><td style="padding:6px 10px;text-align:right;">Headroom</td><td style="padding:6px 10px;"></td></tr>';
+    show.forEach((m, i) => {
+      const isBest = i === 0;
+      const bg = isBest ? 'background:var(--gold-lighter);' : '';
+      html += '<tr style="border-bottom:1px solid var(--gray-200);' + bg + '">';
+      html += '<td style="padding:8px 10px;font-weight:' + (isBest ? '700' : '400') + ';">' + m.label + (isBest ? ' <span style="background:var(--gold);color:white;padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600;margin-left:6px;">BEST FIT</span>' : '') + '</td>';
+      html += '<td style="padding:8px 10px;text-align:right;">' + m.area.toFixed(1) + ' ft²</td>';
+      html += '<td style="padding:8px 10px;text-align:right;">' + m.flow + ' GPM</td>';
+      html += '<td style="padding:8px 10px;text-align:right;">' + m.cap.toLocaleString() + ' gal</td>';
+      html += '<td style="padding:8px 10px;text-align:right;color:var(--green);">+' + m.headroom + '%</td>';
+      html += '<td></td></tr>';
+    });
+    if (matches.length > 5) {
+      html += '<tr><td colspan="6" style="padding:6px 10px;color:var(--gray-500);font-size:12px;">+ ' + (matches.length - 5) + ' more configurations available</td></tr>';
+    }
+    html += '</table>';
+    matchEl.innerHTML = html;
+  }
+
+  // ── Pipe velocity reference at this flow rate ──
+  const pvEl = document.getElementById('fltPipeVelocity');
+  let pvHtml = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+  pvHtml += '<tr style="background:var(--gray-100);font-weight:600;"><td style="padding:6px 10px;">Pipe Size</td><td style="padding:6px 10px;text-align:right;">Velocity (ft/s)</td><td style="padding:6px 10px;text-align:right;">Max Flow at 8 ft/s</td><td style="padding:6px 10px;">Status</td></tr>';
+  Object.keys(PIPE_IDS).forEach(sz => {
+    const v = filterVelocityFPS(reqGPM, PIPE_IDS[sz]);
+    const maxFlow = (8 * PIPE_IDS[sz] * PIPE_IDS[sz]) / 0.4085;
+    let status, statusColor;
+    if (v <= 6) { status = '✓ Ideal'; statusColor = 'var(--green)'; }
+    else if (v <= 8) { status = '~ OK'; statusColor = '#f9a825'; }
+    else { status = '✗ Too fast'; statusColor = '#d93025'; }
+    pvHtml += '<tr style="border-bottom:1px solid var(--gray-200);">';
+    pvHtml += '<td style="padding:6px 10px;">' + sz + '"</td>';
+    pvHtml += '<td style="padding:6px 10px;text-align:right;font-weight:600;">' + v.toFixed(1) + '</td>';
+    pvHtml += '<td style="padding:6px 10px;text-align:right;color:var(--gray-500);">' + maxFlow.toFixed(0) + ' GPM</td>';
+    pvHtml += '<td style="padding:6px 10px;color:' + statusColor + ';font-weight:600;">' + status + '</td>';
+    pvHtml += '</tr>';
+  });
+  pvHtml += '</table>';
+  pvEl.innerHTML = pvHtml;
+}
+
+init();
+initCostEstimator();
+calcFilter();
+</script>
+</body>
+</html>

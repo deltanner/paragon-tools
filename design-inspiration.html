@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paragon Pools — Design & Inspiration</title>
+<style>
+  :root {
+    --gold: #CC9933;
+    --gold-dark: #a67a2a;
+    --gold-light: #faf3e6;
+    --gold-lighter: #fdf8f0;
+    --black: #1a1a1a;
+    --charcoal: #2d2d2d;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-300: #dadce0;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--gray-100);color:var(--gray-900);line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+
+  /* ── Top Nav ── */
+  .topnav{background:var(--black);display:flex;align-items:center;padding:0 24px;height:48px;gap:14px;border-bottom:2px solid var(--gold)}
+  .topnav a{text-decoration:none;color:#888;font-size:13px;font-weight:500;transition:color .2s}
+  .topnav a:hover{color:var(--gold)}
+  .topnav a.nav-home{display:flex;align-items:center;gap:10px;color:white;font-size:14px;font-weight:600;letter-spacing:.3px}
+  .topnav .nav-logo{height:28px;width:auto;flex-shrink:0}
+  .topnav .nav-sep{color:#555;font-size:18px;flex-shrink:0}
+  .topnav .nav-current{color:var(--gold);font-size:13px;font-weight:500;white-space:nowrap}
+
+  /* ── Header ── */
+  .header{background:var(--black);color:white;padding:40px 32px 36px;text-align:center}
+  .header h1{font-size:26px;font-weight:600;color:white;letter-spacing:.5px;margin-bottom:6px}
+  .header p{color:var(--gold);font-size:14px;font-weight:400;max-width:540px;margin:0 auto}
+
+  /* ── Category Grid ── */
+  .container{width:100%;margin:0;padding:0;flex:1}
+
+  .cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+
+  .cat-card{
+    position:relative;aspect-ratio:4/3;overflow:hidden;
+    cursor:pointer;background:var(--charcoal);
+  }
+  .cat-card:hover .cat-overlay{background:rgba(0,0,0,.3)}
+  .cat-card:hover .cat-bg{transform:scale(1.05)}
+  .cat-card .cat-bg{
+    width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#2a2a2a 0%,#3d3d3d 100%);transition:transform .3s ease;
+  }
+  .cat-card .cat-bg img{width:100%;height:100%;object-fit:cover}
+  .cat-card .cat-bg .cat-icon-svg{width:72px;height:72px;opacity:.35}
+  .cat-card .cat-overlay{
+    position:absolute;bottom:0;left:0;right:0;
+    background:rgba(0,0,0,.55);padding:14px 16px;
+    transition:background .3s;
+  }
+  .cat-card .cat-overlay .cat-name{
+    color:white;font-size:16px;font-weight:600;line-height:1.3;
+  }
+  .cat-card .cat-overlay .cat-count{
+    color:var(--gold);font-size:12px;font-weight:500;margin-top:3px;
+  }
+
+  /* ── Gallery View (hidden by default, shown when a category is selected) ── */
+  .gallery-view{display:none}
+  .gallery-view.active{display:block}
+  .hub-view.hidden{display:none}
+
+  .gallery-view{padding:24px 28px 60px}
+  .gallery-back{
+    display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:500;
+    color:var(--gold-dark);text-decoration:none;margin-bottom:20px;padding:8px 0;transition:color .2s;
+  }
+  .gallery-back:hover{color:var(--gold)}
+  .gallery-title{font-size:22px;font-weight:600;color:var(--gray-900);margin-bottom:6px}
+  .gallery-subtitle{font-size:13px;color:var(--gray-600);margin-bottom:24px}
+
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+  .photo-thumb{
+    aspect-ratio:4/3;border-radius:8px;overflow:hidden;cursor:pointer;position:relative;
+    background:var(--gray-200);border:2px solid transparent;transition:all .2s;
+  }
+  .photo-thumb:hover{border-color:var(--gold);box-shadow:var(--shadow-lg);transform:scale(1.02)}
+  .photo-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .photo-thumb .placeholder{
+    width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,var(--charcoal) 0%,#444 100%);color:#666;font-size:12px;
+  }
+
+  /* ── Lightbox ── */
+  .lightbox{
+    display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:9999;
+    background:rgba(0,0,0,.92);align-items:center;justify-content:center;flex-direction:column;
+  }
+  .lightbox.open{display:flex}
+  .lightbox img{max-width:92vw;max-height:82vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+  .lightbox .lb-close{
+    position:absolute;top:16px;right:24px;color:white;font-size:32px;cursor:pointer;
+    width:44px;height:44px;display:flex;align-items:center;justify-content:center;
+    border-radius:50%;background:rgba(255,255,255,.1);transition:background .2s;
+  }
+  .lightbox .lb-close:hover{background:rgba(255,255,255,.25)}
+  .lightbox .lb-nav{
+    position:absolute;top:50%;transform:translateY(-50%);color:white;font-size:36px;
+    cursor:pointer;width:52px;height:52px;display:flex;align-items:center;justify-content:center;
+    border-radius:50%;background:rgba(255,255,255,.1);transition:background .2s;user-select:none;
+  }
+  .lightbox .lb-nav:hover{background:rgba(255,255,255,.25)}
+  .lightbox .lb-prev{left:16px}
+  .lightbox .lb-next{right:16px}
+  .lightbox .lb-caption{
+    color:white;font-size:14px;margin-top:16px;text-align:center;max-width:600px;
+    opacity:.8;
+  }
+  .lightbox .lb-counter{
+    position:absolute;top:20px;left:24px;color:rgba(255,255,255,.6);font-size:14px;font-weight:500;
+  }
+
+  /* empty state for categories with no photos yet */
+  .empty-state{
+    text-align:center;padding:60px 20px;color:var(--gray-600);
+  }
+  .empty-state .empty-icon{font-size:48px;margin-bottom:16px;opacity:.4}
+  .empty-state p{font-size:14px;max-width:400px;margin:0 auto}
+
+  /* ── Footer ── */
+  .footer{text-align:center;padding:20px;font-size:11px;color:var(--gray-600);border-top:1px solid var(--gray-200);background:white}
+  .footer a{color:var(--gray-600);text-decoration:none}
+
+  @media(max-width:1100px){
+    .cat-grid{grid-template-columns:repeat(4,1fr)}
+  }
+  @media(max-width:800px){
+    .cat-grid{grid-template-columns:repeat(3,1fr);gap:3px}
+    .cat-card .cat-overlay .cat-name{font-size:14px}
+    .cat-card .cat-overlay{padding:10px 12px}
+  }
+  @media(max-width:520px){
+    .header{padding:24px 16px 20px}
+    .header h1{font-size:20px}
+    .cat-grid{grid-template-columns:repeat(2,1fr);gap:3px}
+    .cat-card .cat-overlay .cat-name{font-size:13px}
+    .photo-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}
+    .lightbox .lb-nav{width:40px;height:40px;font-size:28px}
+    .gallery-view{padding:20px 16px 40px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Top Nav ── -->
+<div class="topnav">
+  <a class="nav-home" href="index.html">
+    <svg class="nav-logo" viewBox="120 0 160 135" xmlns="http://www.w3.org/2000/svg" style="height:28px;width:auto;">
+      <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+      <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+    </svg>
+    <span style="color:#888;">Paragon Tools</span>
+  </a>
+  <span class="nav-sep">&#x2f;</span>
+  <a href="customer-tools.html" style="color:#888;">Customer Tools</a>
+  <span class="nav-sep">&#x2f;</span>
+  <span class="nav-current">Design & Inspiration</span>
+</div>
+
+<!-- ── Header ── -->
+<div class="header">
+  <h1>Design & Inspiration</h1>
+  <p>Browse photos by category to help visualize your dream pool. Click any image for a full-size view.</p>
+</div>
+
+<div class="container">
+
+  <!-- ════════════════════════ HUB VIEW ════════════════════════ -->
+  <div class="hub-view" id="hubView">
+    <div class="cat-grid" id="catGrid"></div>
+  </div>
+
+  <!-- ════════════════════════ GALLERY VIEW ════════════════════ -->
+  <div class="gallery-view" id="galleryView">
+    <a class="gallery-back" href="#" onclick="showHub();return false">&#8592; Back to categories</a>
+    <div class="gallery-title" id="galleryTitle"></div>
+    <div class="gallery-subtitle" id="gallerySubtitle"></div>
+    <div class="photo-grid" id="photoGrid"></div>
+  </div>
+
+</div>
+
+<div class="footer">&copy; 2026 Paragon Pools &mdash; <a href="index.html">Paragon Tools</a> / <a href="customer-tools.html">Customer Tools</a></div>
+
+<!-- ═══════════════════════ LIGHTBOX ═══════════════════════ -->
+<div class="lightbox" id="lightbox">
+  <div class="lb-counter" id="lbCounter"></div>
+  <div class="lb-close" onclick="closeLightbox()">&times;</div>
+  <div class="lb-nav lb-prev" onclick="navLightbox(-1)">&#8249;</div>
+  <div class="lb-nav lb-next" onclick="navLightbox(1)">&#8250;</div>
+  <img id="lbImg" src="" alt="">
+  <div class="lb-caption" id="lbCaption"></div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   CATEGORY & PHOTO DATA
+   ──────────────────────────────────────────────────────────
+   To add real photos:
+   1. Create a folder like "gallery/pool-shapes/" in your Tools dir
+   2. Drop your JPGs/PNGs in there
+   3. Update the "photos" array below with the file paths and captions
+
+   Each category has:
+     id       – URL-safe slug
+     label    – Display name
+     desc     – Short description for gallery header
+     icon     – SVG path for the placeholder card icon
+     cover    – Path to a cover image for the category card (optional)
+     photos   – Array of { src: 'path/to/image.jpg', caption: 'Description' }
+   ══════════════════════════════════════════════════════════ */
+
+const CATEGORIES = [
+  {
+    id: 'pool-shapes',
+    label: 'Pool Shapes',
+    desc: 'Freeform, geometric, kidney, L-shape, Roman, and custom pool designs.',
+    icon: 'M8 28C8 20 16 12 32 12C48 12 56 20 56 28C56 36 48 44 32 44C16 44 8 36 8 28Z',
+    cover: 'gallery/pool-shapes.jpg',
+    photos: []
+  },
+  {
+    id: 'feature-walls',
+    label: 'Feature Walls',
+    desc: 'Raised bond beam walls, stacked stone, and accent walls with water features.',
+    icon: 'M10 16H54V48H10V16ZM10 28H54M22 16V48M42 16V48',
+    cover: 'gallery/feature-walls.jpg',
+    photos: []
+  },
+  {
+    id: 'coping',
+    label: 'Coping & Edging',
+    desc: 'Cantilevered, travertine, natural stone, brick, and precast coping styles.',
+    icon: 'M8 32H56M12 32V28C12 26 16 24 20 24H44C48 24 52 26 52 28V32M8 32V38H56V32',
+    cover: 'gallery/coping.jpg',
+    photos: []
+  },
+  {
+    id: 'decking',
+    label: 'Decking & Pavers',
+    desc: 'Cool deck, travertine pavers, stamped concrete, natural stone, and turf.',
+    icon: 'M8 12H56V52H8V12ZM8 22H56M8 32H56M8 42H56M20 12V52M32 12V52M44 12V52',
+    cover: 'gallery/decking.jpg',
+    photos: []
+  },
+  {
+    id: 'interior-finishes',
+    label: 'Interior Finishes',
+    desc: 'Plaster, PebbleTec, quartz aggregate, glass bead, and full-tile interiors.',
+    icon: 'M16 48L32 8L48 48H16ZM22 36H42M26 28H38',
+    cover: 'gallery/interior-finishes.jpg',
+    photos: []
+  },
+  {
+    id: 'hardscaping',
+    label: 'Hardscaping',
+    desc: 'Outdoor kitchens, fire pits, seating walls, pergolas, and landscape design.',
+    icon: 'M8 44H56M14 44V28L22 20V44M30 44V32L38 24V44M46 44V28L54 20V44',
+    cover: 'gallery/hardscaping.jpg',
+    photos: []
+  },
+  {
+    id: 'waterfalls',
+    label: 'Waterfalls & Grottos',
+    desc: 'Natural rock waterfalls, grottos, cave-style entries, and cascading features.',
+    icon: 'M20 12C20 12 24 20 20 28C16 36 24 44 24 44M32 8C32 8 36 16 32 24C28 32 36 40 36 40M44 14C44 14 48 22 44 30C40 38 48 46 48 46',
+    cover: 'gallery/waterfalls.jpg',
+    photos: []
+  },
+  {
+    id: 'water-features',
+    label: 'Water Features',
+    desc: 'Scuppers, sheer descents, bubblers, deck jets, laminars, and fountains.',
+    icon: 'M32 8V20M24 14L32 20L40 14M20 28C20 28 26 24 32 28C38 32 44 28 44 28M16 38C16 38 24 34 32 38C40 42 48 38 48 38M12 48C12 48 22 44 32 48C42 52 52 48 52 48',
+    cover: 'gallery/water-features.jpg',
+    photos: []
+  },
+  {
+    id: 'tile',
+    label: 'Tile & Mosaics',
+    desc: 'Waterline tile, glass mosaics, porcelain accents, custom medallions, and step markers.',
+    icon: 'M8 8H28V28H8V8ZM36 8H56V28H36V8ZM8 36H28V56H8V36ZM36 36H56V56H36V36Z',
+    cover: 'gallery/tile.jpg',
+    photos: []
+  },
+  {
+    id: 'spas',
+    label: 'Spas & Hot Tubs',
+    desc: 'Spillover spas, detached spas, perimeter overflow, and custom therapy designs.',
+    icon: 'M16 32C16 24 24 18 32 18C40 18 48 24 48 32C48 40 40 46 32 46C24 46 16 40 16 32ZM26 28C26 28 30 32 34 28M38 32C38 32 42 36 38 40',
+    cover: 'gallery/spas.jpg',
+    photos: []
+  },
+  {
+    id: 'lighting',
+    label: 'Lighting & Ambiance',
+    desc: 'LED color lighting, landscape lighting, fire bowls, fiber optics, and evening scenes.',
+    icon: 'M32 8L36 20H48L38 28L42 40L32 32L22 40L26 28L16 20H28L32 8Z',
+    cover: 'gallery/lighting.jpg',
+    photos: []
+  },
+  {
+    id: 'furniture',
+    label: 'Outdoor Furniture',
+    desc: 'Loungers, dining sets, daybeds, umbrellas, and poolside living spaces.',
+    icon: 'M12 36H52M12 36V44M52 36V44M16 36V24C16 22 18 20 20 20H44C46 20 48 22 48 24V36M20 28H44',
+    cover: 'gallery/furniture.jpg',
+    photos: []
+  },
+  {
+    id: 'slides-diving',
+    label: 'Slides & Diving',
+    desc: 'Custom rock slides, tube slides, diving boards, and jump rocks.',
+    icon: 'M16 12C16 12 20 12 24 20C28 28 32 36 40 40C44 42 48 42 52 40M12 44H56M48 40V44',
+    cover: 'gallery/slides-diving.jpg',
+    photos: []
+  },
+  {
+    id: 'vanishing-edge',
+    label: 'Vanishing & Infinity Edge',
+    desc: 'Infinity edge pools, perimeter overflow, negative edge, and knife edge designs.',
+    icon: 'M8 24H56M8 24C8 24 8 36 16 36C24 36 24 30 32 30C40 30 40 36 48 36C56 36 56 24 56 24M12 24V18H52V24',
+    cover: 'gallery/vanishing-edge.jpg',
+    photos: []
+  },
+  {
+    id: 'entries',
+    label: 'Beach & Tanning Entries',
+    desc: 'Zero/beach entry, tanning ledges, Baja shelves, and walk-in step designs.',
+    icon: 'M8 44L20 36L32 32L44 30L56 30M8 44H56V48H8V44M20 36V44M32 32V44M44 30V44',
+    cover: 'gallery/entries.jpg',
+    photos: []
+  },
+];
+
+/* ══════════════════════════════════════════════════════════
+   RENDER FUNCTIONS
+   ══════════════════════════════════════════════════════════ */
+
+function renderHub() {
+  const grid = document.getElementById('catGrid');
+  grid.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const count = cat.photos.length;
+    const card = document.createElement('div');
+    card.className = 'cat-card';
+    card.onclick = () => showGallery(cat.id);
+
+    let bgHTML;
+    if (cat.cover) {
+      bgHTML = `<img src="${cat.cover}" alt="${cat.label}">`;
+    } else if (count > 0 && cat.photos[0].src) {
+      bgHTML = `<img src="${cat.photos[0].src}" alt="${cat.label}">`;
+    } else {
+      bgHTML = `<svg class="cat-icon-svg" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="${cat.icon}" stroke="#CC9933" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>`;
+    }
+
+    card.innerHTML = `
+      <div class="cat-bg">${bgHTML}</div>
+      <div class="cat-overlay">
+        <div class="cat-name">${cat.label}</div>
+        ${count > 0 ? `<div class="cat-count">${count} photo${count !== 1 ? 's' : ''}</div>` : ''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function showHub() {
+  document.getElementById('hubView').classList.remove('hidden');
+  document.getElementById('galleryView').classList.remove('active');
+  history.pushState(null, '', 'design-inspiration.html');
+}
+
+function showGallery(catId) {
+  const cat = CATEGORIES.find(c => c.id === catId);
+  if (!cat) return;
+
+  document.getElementById('hubView').classList.add('hidden');
+  document.getElementById('galleryView').classList.add('active');
+  document.getElementById('galleryTitle').textContent = cat.label;
+  document.getElementById('gallerySubtitle').textContent = cat.desc;
+
+  const grid = document.getElementById('photoGrid');
+  grid.innerHTML = '';
+
+  if (cat.photos.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">&#128247;</div>
+        <p>No photos added yet for <strong>${cat.label}</strong>.</p>
+        <p style="margin-top:8px;font-size:12px;color:var(--gray-600)">
+          To add photos: create a <code>gallery/${cat.id}/</code> folder in your Tools directory,
+          drop your images in, and update the CATEGORIES array in this file.
+        </p>
+      </div>`;
+    return;
+  }
+
+  // Store current gallery for lightbox navigation
+  window._currentGallery = cat.photos;
+
+  cat.photos.forEach((photo, idx) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'photo-thumb';
+    thumb.onclick = () => openLightbox(idx);
+    thumb.innerHTML = `<img src="${photo.src}" alt="${photo.caption || ''}" loading="lazy">`;
+    grid.appendChild(thumb);
+  });
+
+  history.pushState(null, '', `design-inspiration.html?cat=${catId}`);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ══════════════════════════════════════════════════════════
+   LIGHTBOX
+   ══════════════════════════════════════════════════════════ */
+let lbIndex = 0;
+
+function openLightbox(idx) {
+  if (!window._currentGallery || window._currentGallery.length === 0) return;
+  lbIndex = idx;
+  updateLightbox();
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function navLightbox(dir) {
+  const g = window._currentGallery;
+  if (!g) return;
+  lbIndex = (lbIndex + dir + g.length) % g.length;
+  updateLightbox();
+}
+
+function updateLightbox() {
+  const g = window._currentGallery;
+  const photo = g[lbIndex];
+  document.getElementById('lbImg').src = photo.src;
+  document.getElementById('lbImg').alt = photo.caption || '';
+  document.getElementById('lbCaption').textContent = photo.caption || '';
+  document.getElementById('lbCounter').textContent = (lbIndex + 1) + ' / ' + g.length;
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', e => {
+  const lb = document.getElementById('lightbox');
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  if (e.key === 'ArrowLeft') navLightbox(-1);
+  if (e.key === 'ArrowRight') navLightbox(1);
+});
+
+// Click backdrop to close
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target.id === 'lightbox') closeLightbox();
+});
+
+// Handle browser back button
+window.addEventListener('popstate', () => {
+  const params = new URLSearchParams(location.search);
+  if (params.has('cat')) {
+    showGallery(params.get('cat'));
+  } else {
+    showHub();
+  }
+});
+
+/* ══════════════════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════════════════ */
+renderHub();
+
+// Check URL for direct link to a category
+const params = new URLSearchParams(location.search);
+if (params.has('cat')) {
+  showGallery(params.get('cat'));
+}
+</script>
+
+</body>
+</html>

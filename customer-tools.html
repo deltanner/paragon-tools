@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paragon Pools — Customer Tools</title>
+<style>
+  :root {
+    --gold: #CC9933;
+    --gold-dark: #a67a2a;
+    --gold-light: #faf3e6;
+    --gold-lighter: #fdf8f0;
+    --black: #1a1a1a;
+    --charcoal: #2d2d2d;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-300: #dadce0;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--gray-100); color: var(--gray-900); line-height: 1.5; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* === TOP NAV === */
+  .topnav { background: var(--black); display: flex; align-items: center; padding: 0 24px; height: 48px; gap: 14px; border-bottom: 2px solid var(--gold); }
+  .topnav a.nav-home { display: flex; align-items: center; gap: 10px; text-decoration: none; color: white; font-size: 14px; font-weight: 600; letter-spacing: .3px; transition: color .2s; flex-shrink: 0; }
+  .topnav a.nav-home:hover { color: var(--gold); }
+  .topnav .nav-logo { height: 28px; width: auto; flex-shrink: 0; }
+  .topnav .nav-sep { color: #555; font-size: 18px; flex-shrink: 0; }
+  .topnav .nav-current { color: var(--gold); font-size: 13px; font-weight: 500; white-space: nowrap; }
+
+  /* === HEADER === */
+  .header { background: var(--black); color: white; padding: 40px 32px 36px; text-align: center; }
+  .header h1 { font-size: 26px; font-weight: 600; letter-spacing: 1px; margin-bottom: 6px; }
+  .header p { color: var(--gold); font-size: 14px; font-weight: 400; letter-spacing: 0.3px; }
+  .header-rule { width: 60px; height: 2px; background: var(--gold); margin: 18px auto 0; border: none; }
+
+  /* === CATEGORY CARDS === */
+  .container { max-width: 860px; margin: 0 auto; padding: 50px 20px 60px; flex: 1; }
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 28px; }
+
+  .cat-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; transition: all 0.25s; border: 1px solid var(--gray-200); text-decoration: none; color: inherit; display: flex; flex-direction: column; }
+  .cat-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-4px); border-color: var(--gold); }
+  .cat-card .cat-icon { background: var(--black); padding: 32px; display: flex; align-items: center; justify-content: center; }
+  .cat-card .cat-icon svg { width: 64px; height: 64px; }
+  .cat-card .cat-body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
+  .cat-card .cat-body h2 { font-size: 20px; font-weight: 600; color: var(--gray-900); margin-bottom: 8px; }
+  .cat-card .cat-body p { font-size: 14px; color: var(--gray-600); line-height: 1.6; flex: 1; }
+  .cat-card .cat-body .cat-count { margin-top: 16px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--gold-dark); }
+
+  /* === FOOTER === */
+  .footer { text-align: center; padding: 20px; font-size: 11px; color: var(--gray-600); border-top: 1px solid var(--gray-200); background: white; }
+  .footer a { color: var(--gray-600); text-decoration: none; }
+
+  @media (max-width: 600px) {
+    .header { padding: 30px 20px 24px; }
+    .header h1 { font-size: 22px; }
+    .cat-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Nav -->
+<div class="topnav">
+  <a class="nav-home" href="index.html">
+    <svg class="nav-logo" viewBox="120 0 160 135" xmlns="http://www.w3.org/2000/svg" style="height:28px;width:auto;">
+      <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+      <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+    </svg>
+    <span style="color:#888;">Paragon Tools</span>
+  </a>
+  <span class="nav-sep">&#x2f;</span>
+  <span class="nav-current">Customer Tools</span>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <h1>Customer Tools</h1>
+  <p>Consultation forms and design resources for customer meetings</p>
+  <hr class="header-rule">
+</div>
+
+<!-- Category Cards -->
+<div class="container">
+  <div class="cat-grid">
+
+    <!-- Intake Form -->
+    <a class="cat-card" href="intake-form.html">
+      <div class="cat-icon">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="12" y="10" width="40" height="48" rx="3" stroke="#CC9933" stroke-width="2" fill="none"/>
+          <path d="M20 22H44" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M20 30H44" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M20 38H36" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round"/>
+          <rect x="20" y="44" width="8" height="8" rx="1" stroke="#CC9933" stroke-width="1.5" fill="none"/>
+          <path d="M22 48L24 50L28 46" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="42" cy="48" r="4" stroke="#CC9933" stroke-width="1.5" fill="none"/>
+          <path d="M42 46V48L44 49" stroke="#CC9933" stroke-width="1" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="cat-body">
+        <h2>Intake Form</h2>
+        <p>First-meeting consultation checklist. Capture customer info, pool features, materials, equipment preferences, and export to JSON for JobTread.</p>
+        <div class="cat-count">8 Sections</div>
+      </div>
+    </a>
+
+    <!-- Design Ideas & Inspiration -->
+    <a class="cat-card" href="design-inspiration.html">
+      <div class="cat-icon">
+        <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="8" y="8" width="48" height="36" rx="3" stroke="#CC9933" stroke-width="2" fill="none"/>
+          <path d="M8 34L22 22L34 32L44 24L56 34" stroke="#CC9933" stroke-width="2" fill="none" stroke-linejoin="round"/>
+          <circle cx="42" cy="18" r="4" stroke="#CC9933" stroke-width="1.5" fill="none"/>
+          <path d="M16 52H48" stroke="#CC9933" stroke-width="2" stroke-linecap="round"/>
+          <path d="M24 48H40" stroke="#CC9933" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+        </svg>
+      </div>
+      <div class="cat-body">
+        <h2>Design Ideas & Inspiration</h2>
+        <p>Photo galleries organized by category — pool shapes, finishes, water features, hardscaping, and more. Browse with customers during consultations.</p>
+        <div class="cat-count">15 Categories</div>
+      </div>
+    </a>
+
+  </div>
+</div>
+
+<div class="footer">&copy; 2026 Paragon Pools &mdash; <a href="index.html">Paragon Tools</a></div>
+
+</body>
+</html>

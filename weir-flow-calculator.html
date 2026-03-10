@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paragon Pools — Weir & Vanishing Edge Calculator</title>
+<style>
+  :root {
+    --gold: #CC9933;
+    --gold-dark: #a67a2a;
+    --gold-light: #faf3e6;
+    --gold-lighter: #fdf8f0;
+    --black: #1a1a1a;
+    --charcoal: #2d2d2d;
+    --green: #1e8e3e;
+    --green-light: #e6f4ea;
+    --orange: #e8710a;
+    --orange-light: #fef3e6;
+    --red: #d93025;
+    --blue: #1a73e8;
+    --blue-light: #e8f0fe;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-300: #dadce0;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--gray-100);color:var(--gray-900);line-height:1.5}
+
+  /* ── Top Nav ── */
+  .topnav{background:var(--black);display:flex;align-items:center;padding:0 24px;height:48px;gap:14px}
+  .topnav .tn-logo svg{height:28px;width:auto;display:block}
+  .topnav .tn-sep{width:1px;height:24px;background:#444}
+  .topnav .tn-crumbs{display:flex;gap:6px;font-size:13px}
+  .topnav .tn-crumbs a{color:#aaa;text-decoration:none}
+  .topnav .tn-crumbs a:hover{color:var(--gold)}
+  .topnav .tn-crumbs span{color:#fff}
+
+  .header{background:var(--black);color:white;padding:20px 32px;display:flex;align-items:center;gap:20px}
+  .header-logo{height:60px;width:auto}
+  .header-text h1{font-size:20px;font-weight:600;color:white;letter-spacing:.5px}
+  .header-text p{color:var(--gold);font-size:13px;margin-top:2px;font-weight:500;letter-spacing:.3px}
+  .header-divider{width:1px;height:50px;background:#444;margin:0 4px}
+  .container{max-width:1100px;margin:0 auto;padding:24px 16px}
+  .card{background:white;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+  .card-header{padding:16px 20px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:10px}
+  .card-header h2{font-size:16px;font-weight:600;color:var(--gray-800)}
+  .card-header .num{background:var(--gold);color:white;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+  .card-body{padding:20px}
+  .row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .row:last-child{margin-bottom:0}
+  .field{flex:1;min-width:160px}
+  .field label{display:block;font-size:13px;font-weight:500;color:var(--gray-600);margin-bottom:4px}
+  .field input,.field select{width:100%;padding:8px 12px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px;transition:border .2s}
+  .field input:focus,.field select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(204,153,51,.2)}
+  .hint{font-size:11px;color:var(--gray-600);margin-top:2px}
+
+  /* Results */
+  .results-card{border:2px solid var(--gold)}
+  .results-card .card-header{background:var(--gold-light)}
+  .results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px}
+  .result-box{padding:16px;border-radius:8px;text-align:center}
+  .result-box.primary{background:var(--gold-light);border:1px solid #e6cc8a}
+  .result-box.success{background:var(--green-light);border:1px solid #a8dab5}
+  .result-box.warn{background:var(--orange-light);border:1px solid #f5c98a}
+  .result-box.info{background:var(--blue-light);border:1px solid #a8c7f5}
+  .result-box .val{font-size:28px;font-weight:700;line-height:1.2}
+  .result-box.primary .val{color:var(--gold-dark)}
+  .result-box.success .val{color:var(--green)}
+  .result-box.warn .val{color:var(--orange)}
+  .result-box.info .val{color:var(--blue)}
+  .result-box .lbl{font-size:12px;color:var(--gray-600);margin-top:4px}
+
+  .note-box{background:var(--gold-lighter);border-left:4px solid var(--gold);padding:12px 16px;border-radius:0 6px 6px 0;font-size:13px;margin:12px 0}
+  .note-box strong{color:var(--gold-dark)}
+  .warn-box{background:var(--orange-light);border-left:4px solid var(--orange);padding:12px 16px;border-radius:0 6px 6px 0;font-size:13px;margin:12px 0}
+  .ok-box{background:var(--green-light);border-left:4px solid var(--green);padding:12px 16px;border-radius:0 6px 6px 0;font-size:13px;margin:12px 0}
+
+  /* Effect cards */
+  .effect-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:10px 0}
+  .effect-card{padding:12px;border:2px solid var(--gray-200);border-radius:8px;text-align:center;cursor:pointer;transition:all .15s}
+  .effect-card:hover{border-color:var(--gold);background:var(--gold-lighter)}
+  .effect-card.selected{border-color:var(--gold);background:var(--gold-light);box-shadow:0 0 0 2px rgba(204,153,51,.3)}
+  .effect-card .icon{font-size:24px;margin-bottom:4px}
+  .effect-card .name{font-size:13px;font-weight:600;color:var(--gray-800)}
+  .effect-card .flow{font-size:11px;color:var(--gold-dark);font-weight:600;margin-top:2px}
+
+  /* Tables */
+  .ref-table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+  .ref-table th{background:var(--gold-light);color:var(--gray-800);font-weight:600;padding:8px 12px;text-align:left;border:1px solid var(--gray-200);white-space:nowrap}
+  .ref-table td{padding:6px 12px;border:1px solid var(--gray-200)}
+  .ref-table tr:nth-child(even){background:var(--gray-50)}
+  .ref-table .hl{background:var(--gold-light);font-weight:600}
+
+  .sub-header{font-size:14px;font-weight:600;color:var(--gray-800);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--gray-200)}
+  .sub-header:first-child{margin-top:0}
+
+  /* Collapsible */
+  .collapse-header{cursor:pointer;user-select:none}
+  .collapse-header::after{content:' ▾';font-size:12px;color:var(--gray-600)}
+  .collapse-body{display:none}
+  .collapse-body.open{display:block}
+
+  @media(max-width:600px){
+    .header{padding:14px 16px;gap:12px}
+    .header-logo{height:44px}
+    .container{padding:16px 10px}
+    .results-grid{grid-template-columns:1fr 1fr}
+    .effect-grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Top Nav ── -->
+<nav class="topnav">
+  <a class="tn-logo" href="index.html" title="Paragon Tools Home">
+    <svg viewBox="120 0 160 135" xmlns="http://www.w3.org/2000/svg" style="height:28px;width:auto;">
+      <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+      <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+    </svg>
+  </a>
+  <span class="tn-sep"></span>
+  <div class="tn-crumbs">
+    <a href="engineering-tools.html">Engineering Tools</a><span>/</span><span>Weir & Vanishing Edge Calculator</span>
+  </div>
+</nav>
+
+<!-- ── Header ── -->
+<header class="header">
+  <svg class="header-logo" viewBox="0 0 413.07 220.36" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#CC9933" d="M358.14,183.07v-39.48c0-1.36,0.4-2.43,1.19-3.19c0.79-0.76,1.71-1.14,2.76-1.14c0.46,0,0.95,0.08,1.45,0.23c0.5,0.16,0.97,0.41,1.39,0.76l37.71,30.65v-31.06h8.43v39.54c0,1.36-0.4,2.43-1.19,3.19c-0.79,0.76-1.71,1.14-2.76,1.14c-0.46,0-0.95-0.08-1.45-0.23c-0.5-0.16-0.97-0.41-1.39-0.76l-37.71-30.65v31H358.14z M306.43,170.97c0,1.21,0.44,2.12,1.31,2.72c0.87,0.6,2.26,0.91,4.15,0.91h24.69c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-19.01c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91h-24.69c-1.9,0-3.28,0.3-4.15,0.91c-0.87,0.6-1.31,1.51-1.31,2.72V170.97z M311.95,183.07c-2.63,0-4.85-0.25-6.65-0.76c-1.8-0.51-3.25-1.26-4.36-2.25c-1.1-0.99-1.91-2.22-2.41-3.68c-0.5-1.46-0.76-3.15-0.76-5.06V151.6c0-1.91,0.25-3.6,0.76-5.06c0.5-1.46,1.31-2.69,2.41-3.69c1.1-0.99,2.56-1.74,4.36-2.25c1.8-0.51,4.02-0.76,6.65-0.76h24.58c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25s1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v19.71c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76H311.95z M252.21,183.07c-2.63,0-4.85-0.25-6.65-0.76c-1.8-0.51-3.25-1.26-4.36-2.25c-1.1-0.99-1.91-2.22-2.41-3.68c-0.5-1.46-0.76-3.15-0.76-5.06V151.6c0-1.91,0.25-3.6,0.76-5.06c0.5-1.46,1.31-2.69,2.41-3.69c1.1-0.99,2.56-1.74,4.36-2.25c1.8-0.51,4.02-0.76,6.65-0.76h38.64v8.48h-38.7c-1.9,0-3.28,0.3-4.15,0.91c-0.87,0.6-1.31,1.51-1.31,2.72v19.01c0,1.21,0.44,2.12,1.31,2.72c0.87,0.6,2.26,0.91,4.15,0.91h30.39V161.9h-28.59V154h32.77c1.16,0,2.16,0.42,2.99,1.26c0.83,0.84,1.25,1.84,1.25,3.01v24.8H252.21z M186.21,161.37h36.08v-6.84c0-1.05-0.13-1.96-0.38-2.72c-0.25-0.76-0.7-1.4-1.34-1.93c-0.64-0.53-1.48-0.92-2.53-1.17c-1.05-0.25-2.36-0.38-3.95-0.38h-19.7c-1.59,0-2.91,0.13-3.95,0.38c-1.05,0.25-1.89,0.64-2.53,1.17c-0.64,0.53-1.08,1.17-1.34,1.93c-0.25,0.76-0.38,1.67-0.38,2.72V161.37z M177.78,183.07v-28.54c0-4.72,1.37-8.34,4.1-10.88c2.73-2.53,6.89-3.8,12.46-3.8h19.81c5.58,0,9.73,1.27,12.46,3.8c2.73,2.54,4.1,6.16,4.1,10.88v28.54h-8.43v-13.8h-36.08v13.8H177.78z M127.75,160.03h30.39c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-4.44c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91h-30.39V160.03z M119.32,183.07v-43.22h38.76c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25c1.1,0.99,1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v4.27c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76h-6.51l21.96,15.44h-15.11l-20.34-15.44h-10.34v15.44H119.32z M67.26,161.37h36.08v-6.84c0-1.05-0.13-1.96-0.38-2.72c-0.25-0.76-0.7-1.4-1.34-1.93c-0.64-0.53-1.48-0.92-2.53-1.17c-1.05-0.25-2.36-0.38-3.95-0.38h-19.7c-1.59,0-2.91,0.13-3.95,0.38c-1.05,0.25-1.89,0.64-2.53,1.17c-0.64,0.53-1.08,1.17-1.34,1.93c-0.25,0.76-0.38,1.67-0.38,2.72V161.37z M58.84,183.07v-28.54c0-4.72,1.37-8.34,4.1-10.88c2.73-2.53,6.89-3.8,12.46-3.8h19.81c5.58,0,9.73,1.27,12.46,3.8c2.73,2.54,4.1,6.16,4.1,10.88v28.54h-8.43v-13.8H67.26v13.8H58.84z M9.16,161.08h30.39c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-5.5c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91H9.16V161.08z M0.73,183.07v-43.22h38.76c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25c1.1,0.99,1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v5.62c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76H9.16v14.1H0.73z"/>
+    <path fill="#FFFFFF" d="M262.6,220.36v-5.76H288c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-3.02c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62h-16.91c-5.66,0-8.49-2.1-8.49-6.31v-3.69c0-3.76,2.8-5.64,8.42-5.64h25.44v5.76h-25.64c-0.87,0-1.47,0.09-1.79,0.26c-0.32,0.17-0.48,0.44-0.48,0.81v1.75c0,0.48,0.16,0.81,0.48,1.01c0.32,0.2,0.93,0.3,1.83,0.3h17.11c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v3.49c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H262.6z M233.38,220.36v-29.33h5.76v23.58h20.44v5.76H233.38z M198.05,212.15c0,0.82,0.3,1.44,0.89,1.85c0.6,0.41,1.54,0.62,2.84,0.62h16.87c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-12.9c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62h-16.87c-1.3,0-2.24,0.21-2.84,0.62c-0.6,0.41-0.89,1.03-0.89,1.85V212.15z M201.82,220.36c-1.8,0-3.31-0.17-4.54-0.52c-1.23-0.34-2.22-0.85-2.98-1.53c-0.75-0.67-1.3-1.51-1.65-2.5c-0.34-0.99-0.52-2.14-0.52-3.43v-13.38c0-1.3,0.17-2.44,0.52-3.43c0.34-0.99,0.89-1.83,1.65-2.5c0.75-0.67,1.75-1.18,2.98-1.53c1.23-0.34,2.75-0.52,4.54-0.52h16.79c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v13.38c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H201.82z M156.97,212.15c0,0.82,0.3,1.44,0.89,1.85c0.6,0.41,1.54,0.62,2.84,0.62h16.87c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-12.9c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62H160.7c-1.3,0-2.24,0.21-2.84,0.62c-0.6,0.41-0.89,1.03-0.89,1.85V212.15z M160.74,220.36c-1.8,0-3.31-0.17-4.54-0.52c-1.23-0.34-2.22-0.85-2.98-1.53c-0.75-0.67-1.3-1.51-1.65-2.5c-0.34-0.99-0.52-2.14-0.52-3.43v-13.38c0-1.3,0.17-2.44,0.52-3.43c0.34-0.99,0.89-1.83,1.65-2.5c0.75-0.67,1.75-1.18,2.98-1.53c1.23-0.34,2.75-0.52,4.54-0.52h16.79c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v13.38c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H160.74z M117.2,205.44h20.76c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-3.73c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62H117.2V205.44z M111.44,220.36v-29.33h26.48c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v3.81c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H117.2v9.57H111.44z"/>
+    <rect x="302.69" y="201.11" fill="#CC9933" width="106.75" height="4.87"/>
+    <rect y="201.11" fill="#CC9933" width="106.75" height="4.87"/>
+    <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+    <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+  </svg>
+  <div class="header-divider"></div>
+  <div class="header-text">
+    <h1>Weir & Vanishing Edge Calculator</h1>
+    <p>Flow rates, catch basin sizing, gutter & pipe sizing — all from your inputs</p>
+  </div>
+</header>
+
+<div class="container">
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STEP 1: DESCRIBE YOUR EDGE                 -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <div class="num">1</div>
+    <h2>Describe Your Edge</h2>
+  </div>
+  <div class="card-body">
+    <div class="sub-header">What effect do you want?</div>
+    <div class="effect-grid">
+      <div class="effect-card" onclick="pickEffect('wetted')" id="eff-wetted">
+        <div class="icon">💧</div>
+        <div class="name">Wetted Edge</div>
+        <div class="flow">~2 GPM/ft</div>
+      </div>
+      <div class="effect-card selected" onclick="pickEffect('sheet')" id="eff-sheet">
+        <div class="icon">🌊</div>
+        <div class="name">Gentle Sheet</div>
+        <div class="flow">~5 GPM/ft</div>
+      </div>
+      <div class="effect-card" onclick="pickEffect('laminar')" id="eff-laminar">
+        <div class="icon">〰️</div>
+        <div class="name">Laminar Flow</div>
+        <div class="flow">~13 GPM/ft</div>
+      </div>
+      <div class="effect-card" onclick="pickEffect('tumbling')" id="eff-tumbling">
+        <div class="icon">🏔️</div>
+        <div class="name">Waterfall</div>
+        <div class="flow">~23 GPM/ft</div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:16px">
+      <div class="field">
+        <label for="weirLength">Weir Length (ft)</label>
+        <input type="number" id="weirLength" value="20" min="0.5" step="0.5" oninput="calc()">
+        <div class="hint">Total length of the overflow/vanishing edge</div>
+      </div>
+      <div class="field">
+        <label for="fallHeight">Fall Height (ft)</label>
+        <input type="number" id="fallHeight" value="3" min="0.5" step="0.5" oninput="calc()">
+        <div class="hint">Vertical drop: weir crest to catch basin water level</div>
+      </div>
+      <div class="field">
+        <label for="tolerance">Construction Tolerance</label>
+        <select id="tolerance" onchange="calc()">
+          <option value="0.0625" selected>± 1/16″ (good)</option>
+          <option value="0.125">± 1/8″ (typical)</option>
+          <option value="0.25">± 1/4″ (rough)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- RESULTS: WEIR FLOW                         -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="card results-card">
+  <div class="card-header"><h2>⬇ Weir Flow Results</h2></div>
+  <div class="card-body">
+    <div class="results-grid" id="weirResults"></div>
+    <div id="weirNotes" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- STEP 2: POOL INFO (for catch basin)        -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <div class="num">2</div>
+    <h2>Pool Info (for Catch Basin Sizing)</h2>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="field">
+        <label for="poolArea">Pool Surface Area (sq ft)</label>
+        <input type="number" id="poolArea" value="800" min="1" step="10" oninput="calc()">
+      </div>
+      <div class="field">
+        <label for="bathers">Max Bathers</label>
+        <input type="number" id="bathers" value="8" min="0" step="1" oninput="calc()">
+      </div>
+      <div class="field">
+        <label for="spaVol">Spa Volume (gal) — 0 if none</label>
+        <input type="number" id="spaVol" value="0" min="0" step="50" oninput="calc()">
+        <div class="hint">Only if spa drains into catch basin</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- RESULTS: CATCH BASIN                       -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="card results-card">
+  <div class="card-header"><h2>⬇ Catch Basin / Surge Tank</h2></div>
+  <div class="card-body">
+    <div class="results-grid" id="basinResults"></div>
+    <div id="basinNotes" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- RESULTS: GUTTER & PIPE (auto-sized)        -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="card results-card">
+  <div class="card-header"><h2>⬇ Recommended Gutter & Drain Pipe</h2></div>
+  <div class="card-body">
+    <div class="results-grid" id="gutterResults"></div>
+    <div id="gutterNotes" style="margin-top:14px"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- OPTIONAL: Weir Construction Guide          -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-header">
+    <h2>Weir Construction Guide</h2>
+  </div>
+  <div class="card-body" id="weirGuide"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- COLLAPSIBLE: Reference Tables              -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="card">
+  <div class="card-header collapse-header" onclick="toggleRef()">
+    <h2>Reference Tables</h2>
+  </div>
+  <div class="card-body collapse-body" id="refPanel">
+    <div class="sub-header">Francis Weir Flow — GPM per Foot of Weir</div>
+    <table class="ref-table">
+      <tr><th>Head (h)</th><th>GPM/ft</th><th>Typical Use</th></tr>
+      <tr><td>1/16″</td><td>0.6</td><td>Barely wet</td></tr>
+      <tr><td>1/8″</td><td>1.6</td><td>Wetted edge</td></tr>
+      <tr class="hl"><td>3/16″</td><td>2.9</td><td>Wetted edge + tolerance</td></tr>
+      <tr><td>1/4″</td><td>4.5</td><td>Thin sheet</td></tr>
+      <tr class="hl"><td>1/2″</td><td>12.7</td><td>Laminar flow</td></tr>
+      <tr class="hl"><td>3/4″</td><td>23.4</td><td>Tumbling waterfall</td></tr>
+      <tr><td>1″</td><td>36.0</td><td>Heavy flow</td></tr>
+      <tr><td>1-1/2″</td><td>66.2</td><td></td></tr>
+      <tr><td>2″</td><td>102.0</td><td></td></tr>
+      <tr><td>3″</td><td>187.0</td><td></td></tr>
+    </table>
+
+    <div class="sub-header">PVC Pipe Capacity — Flowing ½ Full (n=0.011)</div>
+    <table class="ref-table">
+      <tr><th>Dia.</th><th>1%</th><th>2%</th><th>3%</th><th>4%</th></tr>
+      <tr><td>2″</td><td>10</td><td>14</td><td>17</td><td>20</td></tr>
+      <tr><td>3″</td><td>29</td><td>41</td><td>50</td><td>58</td></tr>
+      <tr><td>4″</td><td>61</td><td>87</td><td>106</td><td>122</td></tr>
+      <tr><td>6″</td><td>178</td><td>252</td><td>309</td><td>357</td></tr>
+      <tr><td>8″</td><td>381</td><td>539</td><td>660</td><td>762</td></tr>
+    </table>
+
+    <div class="sub-header">Rectangular Channel Capacity — ½ Full (concrete n=0.013)</div>
+    <table class="ref-table">
+      <tr><th>W × D</th><th>1%</th><th>2%</th></tr>
+      <tr><td>4″ × 4″</td><td>11</td><td>15</td></tr>
+      <tr><td>4″ × 6″</td><td>19</td><td>27</td></tr>
+      <tr><td>6″ × 6″</td><td>36</td><td>51</td></tr>
+      <tr><td>6″ × 8″</td><td>56</td><td>79</td></tr>
+      <tr><td>8″ × 8″</td><td>87</td><td>123</td></tr>
+      <tr><td>8″ × 12″</td><td>151</td><td>213</td></tr>
+      <tr><td>12″ × 12″</td><td>252</td><td>356</td></tr>
+    </table>
+
+    <div class="note-box" style="margin-top:16px">
+      <strong>Francis Weir Formula:</strong> q = 36 × L × h<sup>1.5</sup><br>
+      q = flow (GPM), L = weir length (ft), h = head over weir (inches).<br>
+      For contracted weirs: subtract (0.3 × n × h<sup>2.5</sup>) where n = 2.
+    </div>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ── Effect presets: head in inches ── */
+const EFFECTS = {
+  wetted:   { head: 0.125,  label: 'Wetted Edge' },
+  sheet:    { head: 0.25,   label: 'Gentle Sheet' },
+  laminar:  { head: 0.5,    label: 'Laminar Flow' },
+  tumbling: { head: 0.75,   label: 'Waterfall' }
+};
+let curEffect = 'sheet';
+
+function pickEffect(e) {
+  curEffect = e;
+  document.querySelectorAll('.effect-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('eff-' + e).classList.add('selected');
+  calc();
+}
+
+/* ── Francis formula: q = 36 * L * h^1.5 (long weir, n=0) ── */
+function francis(L, h) {
+  return (h > 0 && L > 0) ? 36 * L * Math.pow(h, 1.5) : 0;
+}
+
+/* ── Manning for PVC half-full pipe ── */
+function pipeCapacity(diaIn, slopeFrac) {
+  const n = 0.011, r = (diaIn / 12) / 2;
+  const A = Math.PI * r * r / 2;
+  const Pw = Math.PI * r;
+  const R = A / Pw;
+  const V = (1.486 / n) * Math.pow(R, 2/3) * Math.pow(slopeFrac, 0.5);
+  return { gpm: V * A * 448.831, fps: V };
+}
+
+/* ── Manning for rectangular concrete channel half-full ── */
+function gutterCapacity(wIn, dIn, slopeFrac) {
+  const n = 0.013;
+  const w = wIn / 12, hd = (dIn / 2) / 12;
+  const A = w * hd, P = w + 2 * hd, R = A / P;
+  const V = (1.486 / n) * Math.pow(R, 2/3) * Math.pow(slopeFrac, 0.5);
+  return { gpm: V * A * 448.831, fps: V };
+}
+
+/* ── Pump HP estimate ── */
+function pumpHP(gpm) {
+  if (gpm <= 30) return '½';
+  if (gpm <= 50) return '¾';
+  if (gpm <= 75) return '1';
+  if (gpm <= 100) return '1½';
+  if (gpm <= 140) return '2';
+  if (gpm <= 200) return '3';
+  if (gpm <= 280) return '5';
+  return '5+';
+}
+
+/* ── Weir config lookup ── */
+const WEIR_CFG = [
+  { max: 2,  D: '¼″',    W: '4–6″',   L: '1″' },
+  { max: 4,  D: '⅜″',    W: '6–8″',   L: '1½″' },
+  { max: 6,  D: '½″',    W: '8–12″',  L: '2″' },
+  { max: 8,  D: '¾″',    W: '10–12″', L: '2½″' },
+  { max: 10, D: '1″',    W: '12–14″', L: '3″' },
+  { max: 12, D: '1¼″',   W: '12–14″', L: '3″' }
+];
+
+/* ── Pick smallest adequate pipe ── */
+function bestPipe(gpm) {
+  const sizes = [2, 3, 4, 6, 8, 10, 12];
+  const slope = 0.01; // assume 1%
+  for (const d of sizes) {
+    const p = pipeCapacity(d, slope);
+    if (p.gpm >= gpm && p.fps >= 2) return { dia: d, ...p };
+  }
+  const last = sizes[sizes.length - 1];
+  return { dia: last, ...pipeCapacity(last, slope) };
+}
+
+/* ── Pick smallest adequate gutter ── */
+function bestGutter(gpm) {
+  const combos = [
+    [4,4],[4,6],[6,6],[6,8],[8,8],[8,10],[8,12],[10,10],[10,12],[12,12],[12,16]
+  ];
+  const slope = 0.01;
+  for (const [w, d] of combos) {
+    const g = gutterCapacity(w, d, slope);
+    if (g.gpm >= gpm && g.fps >= 2) return { w, d, ...g };
+  }
+  const [w, d] = combos[combos.length - 1];
+  return { w, d, ...gutterCapacity(w, d, slope) };
+}
+
+/* ══════════════════════════════════════════ */
+/* MAIN CALC — everything recalculates here  */
+/* ══════════════════════════════════════════ */
+function calc() {
+  const L = parseFloat(document.getElementById('weirLength').value) || 0;
+  const fall = parseFloat(document.getElementById('fallHeight').value) || 0;
+  const tol = parseFloat(document.getElementById('tolerance').value);
+  const poolArea = parseFloat(document.getElementById('poolArea').value) || 0;
+  const bathers = parseInt(document.getElementById('bathers').value) || 0;
+  const spaVol = parseFloat(document.getElementById('spaVol').value) || 0;
+
+  const h = EFFECTS[curEffect].head;
+
+  // ── WEIR FLOW ──
+  const qIdeal = francis(L, h);
+  const qPerFt = L > 0 ? qIdeal / L : 0;
+  const hWithTol = h + tol; // effective head needed to keep high side wet
+  const qDesign = francis(L, hWithTol); // design flow accounting for tolerance
+
+  document.getElementById('weirResults').innerHTML = `
+    <div class="result-box primary">
+      <div class="val">${qDesign.toFixed(0)}</div>
+      <div class="lbl">Design Flow (GPM)</div>
+    </div>
+    <div class="result-box info">
+      <div class="val">${(L > 0 ? qDesign / L : 0).toFixed(1)}</div>
+      <div class="lbl">GPM per Foot</div>
+    </div>
+    <div class="result-box success">
+      <div class="val">${pumpHP(qDesign)}</div>
+      <div class="lbl">Est. Pump Size (HP)</div>
+    </div>
+    <div class="result-box warn">
+      <div class="val">${frac(hWithTol)}</div>
+      <div class="lbl">Effective Head (″)</div>
+    </div>
+  `;
+
+  let wn = `<div class="note-box"><strong>${EFFECTS[curEffect].label}</strong> at ${frac(h)}″ head + ${frac(tol)} tolerance = ${frac(hWithTol)}″ effective head → ${qDesign.toFixed(0)} GPM over ${L} ft of weir.</div>`;
+  document.getElementById('weirNotes').innerHTML = wn;
+
+  // ── CATCH BASIN ──
+  const batherSurge = Math.max(bathers * 25, (poolArea * 2 / 12) * 7.48);
+  const evap = (poolArea * 0.25 / 12) * 7.48;
+  const transitTime = 15; // assume 15 sec
+  const transit = (qDesign / 60) * transitTime;
+  const subtotal = batherSurge + evap + transit + spaVol;
+  const freeboard = subtotal * 0.10;
+  const totalGal = Math.ceil(subtotal + freeboard);
+  const totalCuFt = totalGal / 7.48;
+
+  document.getElementById('basinResults').innerHTML = `
+    <div class="result-box primary">
+      <div class="val">${totalGal.toLocaleString()}</div>
+      <div class="lbl">Min. Basin Volume (gal)</div>
+    </div>
+    <div class="result-box info">
+      <div class="val">${totalCuFt.toFixed(0)}</div>
+      <div class="lbl">Volume (cu ft)</div>
+    </div>
+    <div class="result-box success">
+      <div class="val">${Math.ceil(batherSurge)}</div>
+      <div class="lbl">Bather Surge (gal)</div>
+    </div>
+    <div class="result-box warn">
+      <div class="val">${transit.toFixed(0)}</div>
+      <div class="lbl">Water in Transit (gal)</div>
+    </div>
+  `;
+
+  let bn = `<table class="ref-table" style="max-width:520px">
+    <tr><td>Bather Surge</td><td style="text-align:right"><strong>${Math.ceil(batherSurge)} gal</strong></td>
+      <td class="hint">${bathers} bathers × 25 = ${bathers * 25}; 2″ over ${poolArea} sf = ${Math.ceil((poolArea * 2 / 12) * 7.48)}; max</td></tr>
+    <tr><td>Evaporative Loss</td><td style="text-align:right"><strong>${evap.toFixed(0)} gal</strong></td>
+      <td class="hint">¼″/day × ${poolArea} sf</td></tr>
+    <tr><td>Water in Transit</td><td style="text-align:right"><strong>${transit.toFixed(0)} gal</strong></td>
+      <td class="hint">${qDesign.toFixed(0)} GPM × 15 sec</td></tr>
+    ${spaVol > 0 ? `<tr><td>Spa Drain-Down</td><td style="text-align:right"><strong>${spaVol} gal</strong></td><td class="hint"></td></tr>` : ''}
+    <tr><td>Freeboard (10%)</td><td style="text-align:right"><strong>${Math.ceil(freeboard)} gal</strong></td><td class="hint">safety margin</td></tr>
+    <tr style="border-top:2px solid var(--gold)"><td><strong>TOTAL</strong></td><td style="text-align:right"><strong>${totalGal.toLocaleString()} gal</strong></td><td></td></tr>
+  </table>`;
+  document.getElementById('basinNotes').innerHTML = bn;
+
+  // ── GUTTER & PIPE (auto-sized) ──
+  const gutter = bestGutter(qDesign);
+  const pipe = bestPipe(qDesign);
+
+  const gOk = gutter.gpm >= qDesign;
+  const pOk = pipe.gpm >= qDesign;
+
+  document.getElementById('gutterResults').innerHTML = `
+    <div class="result-box ${gOk ? 'success' : 'warn'}">
+      <div class="val">${gutter.w}″ × ${gutter.d}″</div>
+      <div class="lbl">Recommended Gutter<br>(concrete, 1% slope, ½ full)</div>
+    </div>
+    <div class="result-box info">
+      <div class="val">${gutter.gpm.toFixed(0)}</div>
+      <div class="lbl">Gutter Capacity (GPM)</div>
+    </div>
+    <div class="result-box ${pOk ? 'success' : 'warn'}">
+      <div class="val">${pipe.dia}″</div>
+      <div class="lbl">Recommended PVC Trunk<br>(1% slope, ½ full)</div>
+    </div>
+    <div class="result-box info">
+      <div class="val">${pipe.gpm.toFixed(0)}</div>
+      <div class="lbl">Pipe Capacity (GPM)</div>
+    </div>
+  `;
+
+  let gn = '';
+  if (gutter.fps < 2) gn += `<div class="warn-box">Gutter velocity ${gutter.fps.toFixed(1)} fps is below 2 fps minimum for self-cleaning. Consider increasing slope.</div>`;
+  if (pipe.fps < 2) gn += `<div class="warn-box">Pipe velocity ${pipe.fps.toFixed(1)} fps is below 2 fps minimum. Consider increasing slope.</div>`;
+  if (gOk && pOk && gutter.fps >= 2 && pipe.fps >= 2) {
+    gn += `<div class="ok-box"><strong>✓ Sizes look good.</strong> Gutter at ${gutter.fps.toFixed(1)} fps, pipe at ${pipe.fps.toFixed(1)} fps. Both above 2 fps scouring minimum. Assumes 1% slope and single outlet — add outlets for long perimeters.</div>`;
+  }
+  document.getElementById('gutterNotes').innerHTML = gn;
+
+  // ── WEIR CONSTRUCTION GUIDE ──
+  let cfg = WEIR_CFG.find(c => fall < c.max) || WEIR_CFG[WEIR_CFG.length - 1];
+  document.getElementById('weirGuide').innerHTML = `
+    <div class="note-box"><strong>For a ${fall} ft fall using a metal-edged weir (best for laminar):</strong></div>
+    <table class="ref-table" style="max-width:400px;margin-top:8px">
+      <tr><td>Water Depth over weir (D)</td><td><strong>${cfg.D}</strong></td></tr>
+      <tr><td>Trough Wall Width (W)</td><td><strong>${cfg.W}</strong></td></tr>
+      <tr><td>Min. Weir Lip Length (L)</td><td><strong>${cfg.L}</strong></td></tr>
+    </table>
+    <div class="hint" style="margin-top:8px">Source: PHTA Builder's Manual, 5th Ed. Metal edged weirs are the most effective for laminar sheet flow and can be adjusted to produce near-perfect level.</div>
+  `;
+}
+
+/* ── Fraction display helper ── */
+function frac(v) {
+  const map = {
+    0.0625:'1/16', 0.125:'1/8', 0.1875:'3/16', 0.25:'1/4', 0.3125:'5/16',
+    0.375:'3/8', 0.4375:'7/16', 0.5:'1/2', 0.5625:'9/16', 0.625:'5/8',
+    0.6875:'11/16', 0.75:'3/4', 0.8125:'13/16', 0.875:'7/8', 0.9375:'15/16',
+    1:'1', 1.25:'1-1/4', 1.5:'1-1/2', 1.75:'1-3/4', 2:'2'
+  };
+  return map[v] || v.toFixed(3);
+}
+
+/* ── Toggle reference tables ── */
+function toggleRef() {
+  document.getElementById('refPanel').classList.toggle('open');
+}
+
+/* ── Init ── */
+calc();
+</script>
+</body>
+</html>

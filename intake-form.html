@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Paragon Pools — Intake Form</title>
+<style>
+  :root {
+    --gold: #CC9933;
+    --gold-dark: #a67a2a;
+    --gold-light: #faf3e6;
+    --gold-lighter: #fdf8f0;
+    --black: #1a1a1a;
+    --charcoal: #2d2d2d;
+    --green: #1e8e3e;
+    --green-light: #e6f4ea;
+    --orange: #e8710a;
+    --orange-light: #fef3e6;
+    --red: #d93025;
+    --blue: #1a73e8;
+    --blue-light: #e8f0fe;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-300: #dadce0;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--gray-100);color:var(--gray-900);line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+
+  /* ── Top Nav ── */
+  .topnav{background:var(--black);display:flex;align-items:center;padding:0 24px;height:48px;gap:14px;border-bottom:2px solid var(--gold)}
+  .topnav a.nav-home{display:flex;align-items:center;gap:10px;text-decoration:none;color:white;font-size:14px;font-weight:600;letter-spacing:.3px;transition:color .2s;flex-shrink:0}
+  .topnav a.nav-home:hover{color:var(--gold)}
+  .topnav .nav-logo{height:28px;width:auto;flex-shrink:0}
+  .topnav .nav-sep{color:#555;font-size:18px;flex-shrink:0}
+  .topnav .nav-current{color:var(--gold);font-size:13px;font-weight:500;white-space:nowrap}
+
+  /* ── Header ── */
+  .header{background:var(--black);color:white;padding:20px 32px;display:flex;align-items:center;gap:20px}
+  .header-logo{height:60px;width:auto}
+  .header-text h1{font-size:20px;font-weight:600;color:white;letter-spacing:.5px}
+  .header-text p{color:var(--gold);font-size:13px;margin-top:2px;font-weight:500;letter-spacing:.3px}
+  .header-divider{width:1px;height:50px;background:#444;margin:0 4px}
+
+  .container{max-width:900px;margin:0 auto;padding:24px 16px 60px;flex:1}
+
+  /* ── Cards ── */
+  .card{background:white;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+  .card-header{padding:16px 20px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+  .card-header h2{font-size:16px;font-weight:600;color:var(--gray-800)}
+  .card-header .num{background:var(--gold);color:white;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+  .card-header .chevron{margin-left:auto;font-size:18px;color:var(--gray-600);transition:transform .2s}
+  .card-header.collapsed .chevron{transform:rotate(-90deg)}
+  .card-body{padding:20px}
+  .card-body.hidden{display:none}
+
+  /* ── Form Fields ── */
+  .row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px}
+  .row:last-child{margin-bottom:0}
+  .field{flex:1;min-width:180px}
+  .field label{display:block;font-size:13px;font-weight:500;color:var(--gray-600);margin-bottom:4px}
+  .field input,.field select,.field textarea{width:100%;padding:8px 12px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px;transition:border .2s;font-family:inherit}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 2px rgba(204,153,51,.2)}
+  .field textarea{resize:vertical;min-height:60px}
+  .hint{font-size:11px;color:var(--gray-600);margin-top:2px}
+
+  /* ── Checkbox Grid ── */
+  .section-label{font-size:13px;font-weight:600;color:var(--gray-800);margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--gray-200)}
+  .section-label:first-child{margin-top:0}
+  .grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+  .check-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;cursor:pointer;transition:all .15s}
+  .check-item:hover{border-color:var(--gold);background:var(--gold-lighter)}
+  .check-item.checked{border-color:var(--gold);background:var(--gold-light)}
+  .check-item input[type=checkbox]{width:16px;height:16px;accent-color:var(--gold);cursor:pointer}
+  .check-item label{font-size:13px;cursor:pointer;flex:1}
+
+  /* ── Action Buttons ── */
+  .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+  .btn{padding:10px 24px;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+  .btn-primary{background:var(--gold);color:white}
+  .btn-primary:hover{background:var(--gold-dark)}
+  .btn-secondary{background:white;color:var(--gray-800);border:1px solid var(--gray-300)}
+  .btn-secondary:hover{border-color:var(--gold);color:var(--gold-dark)}
+  .btn-danger{background:white;color:var(--red);border:1px solid var(--gray-300)}
+  .btn-danger:hover{border-color:var(--red);background:#fef2f2}
+
+  /* ── Summary Card ── */
+  .summary-card{border:2px solid var(--gold)}
+  .summary-card .card-header{background:var(--gold-light)}
+  .summary-content{font-size:13px;line-height:1.8}
+  .summary-content .s-section{margin-bottom:12px}
+  .summary-content .s-title{font-weight:600;color:var(--gray-800);margin-bottom:2px}
+  .summary-content .s-list{color:var(--gray-600);padding-left:16px}
+  .summary-content .s-list li{margin-bottom:2px}
+  .summary-content .s-empty{color:var(--gray-300);font-style:italic}
+
+  /* ── Toast ── */
+  .toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:white;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;box-shadow:var(--shadow-lg);transform:translateY(100px);opacity:0;transition:all .3s;z-index:999}
+  .toast.show{transform:translateY(0);opacity:1}
+
+  /* ── Footer ── */
+  .footer{text-align:center;padding:20px;font-size:11px;color:var(--gray-600);border-top:1px solid var(--gray-200);background:white}
+  .footer a{color:var(--gray-600);text-decoration:none}
+
+  @media(max-width:600px){
+    .header{padding:16px 20px}
+    .header-logo{height:40px}
+    .grid-3{grid-template-columns:1fr}
+    .row{flex-direction:column}
+    .field{min-width:100%}
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Top Nav ── -->
+<div class="topnav">
+  <a class="nav-home" href="index.html">
+    <svg class="nav-logo" viewBox="120 0 160 135" xmlns="http://www.w3.org/2000/svg" style="height:28px;width:auto;">
+      <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+      <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+    </svg>
+    <span style="color:#888;">Paragon Tools</span>
+  </a>
+  <span class="nav-sep">&#x2f;</span>
+  <a href="customer-tools.html" style="color:#888;text-decoration:none;font-size:13px;font-weight:500;">Customer Tools</a>
+  <span class="nav-sep">&#x2f;</span>
+  <span class="nav-current">Intake Form</span>
+</div>
+
+<!-- ── Header ── -->
+<div class="header">
+  <svg class="header-logo" viewBox="0 0 413.07 220.36" xmlns="http://www.w3.org/2000/svg">
+    <path fill="#CC9933" d="M358.14,183.07v-39.48c0-1.36,0.4-2.43,1.19-3.19c0.79-0.76,1.71-1.14,2.76-1.14c0.46,0,0.95,0.08,1.45,0.23c0.5,0.16,0.97,0.41,1.39,0.76l37.71,30.65v-31.06h8.43v39.54c0,1.36-0.4,2.43-1.19,3.19c-0.79,0.76-1.71,1.14-2.76,1.14c-0.46,0-0.95-0.08-1.45-0.23c-0.5-0.16-0.97-0.41-1.39-0.76l-37.71-30.65v31H358.14z M306.43,170.97c0,1.21,0.44,2.12,1.31,2.72c0.87,0.6,2.26,0.91,4.15,0.91h24.69c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-19.01c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91h-24.69c-1.9,0-3.28,0.3-4.15,0.91c-0.87,0.6-1.31,1.51-1.31,2.72V170.97z M311.95,183.07c-2.63,0-4.85-0.25-6.65-0.76c-1.8-0.51-3.25-1.26-4.36-2.25c-1.1-0.99-1.91-2.22-2.41-3.68c-0.5-1.46-0.76-3.15-0.76-5.06V151.6c0-1.91,0.25-3.6,0.76-5.06c0.5-1.46,1.31-2.69,2.41-3.69c1.1-0.99,2.56-1.74,4.36-2.25c1.8-0.51,4.02-0.76,6.65-0.76h24.58c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25s1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v19.71c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76H311.95z M252.21,183.07c-2.63,0-4.85-0.25-6.65-0.76c-1.8-0.51-3.25-1.26-4.36-2.25c-1.1-0.99-1.91-2.22-2.41-3.68c-0.5-1.46-0.76-3.15-0.76-5.06V151.6c0-1.91,0.25-3.6,0.76-5.06c0.5-1.46,1.31-2.69,2.41-3.69c1.1-0.99,2.56-1.74,4.36-2.25c1.8-0.51,4.02-0.76,6.65-0.76h38.64v8.48h-38.7c-1.9,0-3.28,0.3-4.15,0.91c-0.87,0.6-1.31,1.51-1.31,2.72v19.01c0,1.21,0.44,2.12,1.31,2.72c0.87,0.6,2.26,0.91,4.15,0.91h30.39V161.9h-28.59V154h32.77c1.16,0,2.16,0.42,2.99,1.26c0.83,0.84,1.25,1.84,1.25,3.01v24.8H252.21z M186.21,161.37h36.08v-6.84c0-1.05-0.13-1.96-0.38-2.72c-0.25-0.76-0.7-1.4-1.34-1.93c-0.64-0.53-1.48-0.92-2.53-1.17c-1.05-0.25-2.36-0.38-3.95-0.38h-19.7c-1.59,0-2.91,0.13-3.95,0.38c-1.05,0.25-1.89,0.64-2.53,1.17c-0.64,0.53-1.08,1.17-1.34,1.93c-0.25,0.76-0.38,1.67-0.38,2.72V161.37z M177.78,183.07v-28.54c0-4.72,1.37-8.34,4.1-10.88c2.73-2.53,6.89-3.8,12.46-3.8h19.81c5.58,0,9.73,1.27,12.46,3.8c2.73,2.54,4.1,6.16,4.1,10.88v28.54h-8.43v-13.8h-36.08v13.8H177.78z M127.75,160.03h30.39c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-4.44c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91h-30.39V160.03z M119.32,183.07v-43.22h38.76c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25c1.1,0.99,1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v4.27c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76h-6.51l21.96,15.44h-15.11l-20.34-15.44h-10.34v15.44H119.32z M67.26,161.37h36.08v-6.84c0-1.05-0.13-1.96-0.38-2.72c-0.25-0.76-0.7-1.4-1.34-1.93c-0.64-0.53-1.48-0.92-2.53-1.17c-1.05-0.25-2.36-0.38-3.95-0.38h-19.7c-1.59,0-2.91,0.13-3.95,0.38c-1.05,0.25-1.89,0.64-2.53,1.17c-0.64,0.53-1.08,1.17-1.34,1.93c-0.25,0.76-0.38,1.67-0.38,2.72V161.37z M58.84,183.07v-28.54c0-4.72,1.37-8.34,4.1-10.88c2.73-2.53,6.89-3.8,12.46-3.8h19.81c5.58,0,9.73,1.27,12.46,3.8c2.73,2.54,4.1,6.16,4.1,10.88v28.54h-8.43v-13.8H67.26v13.8H58.84z M9.16,161.08h30.39c1.9,0,3.28-0.3,4.15-0.91c0.87-0.6,1.31-1.51,1.31-2.72v-5.5c0-1.21-0.44-2.12-1.31-2.72c-0.87-0.6-2.26-0.91-4.15-0.91H9.16V161.08z M0.73,183.07v-43.22h38.76c2.6,0,4.8,0.25,6.62,0.76c1.82,0.51,3.28,1.26,4.39,2.25c1.1,0.99,1.91,2.22,2.41,3.69c0.5,1.46,0.76,3.15,0.76,5.06v5.62c0,1.91-0.25,3.6-0.76,5.06c-0.5,1.46-1.31,2.69-2.41,3.68c-1.1,0.99-2.57,1.75-4.39,2.25c-1.82,0.51-4.03,0.76-6.62,0.76H9.16v14.1H0.73z"/>
+    <path fill="#FFFFFF" d="M262.6,220.36v-5.76H288c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-3.02c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62h-16.91c-5.66,0-8.49-2.1-8.49-6.31v-3.69c0-3.76,2.8-5.64,8.42-5.64h25.44v5.76h-25.64c-0.87,0-1.47,0.09-1.79,0.26c-0.32,0.17-0.48,0.44-0.48,0.81v1.75c0,0.48,0.16,0.81,0.48,1.01c0.32,0.2,0.93,0.3,1.83,0.3h17.11c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v3.49c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H262.6z M233.38,220.36v-29.33h5.76v23.58h20.44v5.76H233.38z M198.05,212.15c0,0.82,0.3,1.44,0.89,1.85c0.6,0.41,1.54,0.62,2.84,0.62h16.87c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-12.9c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62h-16.87c-1.3,0-2.24,0.21-2.84,0.62c-0.6,0.41-0.89,1.03-0.89,1.85V212.15z M201.82,220.36c-1.8,0-3.31-0.17-4.54-0.52c-1.23-0.34-2.22-0.85-2.98-1.53c-0.75-0.67-1.3-1.51-1.65-2.5c-0.34-0.99-0.52-2.14-0.52-3.43v-13.38c0-1.3,0.17-2.44,0.52-3.43c0.34-0.99,0.89-1.83,1.65-2.5c0.75-0.67,1.75-1.18,2.98-1.53c1.23-0.34,2.75-0.52,4.54-0.52h16.79c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v13.38c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H201.82z M156.97,212.15c0,0.82,0.3,1.44,0.89,1.85c0.6,0.41,1.54,0.62,2.84,0.62h16.87c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-12.9c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62H160.7c-1.3,0-2.24,0.21-2.84,0.62c-0.6,0.41-0.89,1.03-0.89,1.85V212.15z M160.74,220.36c-1.8,0-3.31-0.17-4.54-0.52c-1.23-0.34-2.22-0.85-2.98-1.53c-0.75-0.67-1.3-1.51-1.65-2.5c-0.34-0.99-0.52-2.14-0.52-3.43v-13.38c0-1.3,0.17-2.44,0.52-3.43c0.34-0.99,0.89-1.83,1.65-2.5c0.75-0.67,1.75-1.18,2.98-1.53c1.23-0.34,2.75-0.52,4.54-0.52h16.79c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v13.38c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H160.74z M117.2,205.44h20.76c1.3,0,2.24-0.21,2.84-0.62c0.6-0.41,0.89-1.03,0.89-1.85v-3.73c0-0.82-0.3-1.44-0.89-1.85c-0.6-0.41-1.54-0.62-2.84-0.62H117.2V205.44z M111.44,220.36v-29.33h26.48c1.77,0,3.28,0.17,4.53,0.52c1.24,0.34,2.24,0.85,3,1.53c0.75,0.67,1.3,1.51,1.65,2.5c0.34,0.99,0.52,2.14,0.52,3.43v3.81c0,1.3-0.17,2.44-0.52,3.43c-0.34,0.99-0.89,1.83-1.65,2.5c-0.75,0.67-1.75,1.18-3,1.53c-1.24,0.34-2.75,0.52-4.53,0.52H117.2v9.57H111.44z"/>
+    <rect x="302.69" y="201.11" fill="#CC9933" width="106.75" height="4.87"/>
+    <rect y="201.11" fill="#CC9933" width="106.75" height="4.87"/>
+    <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+    <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+  </svg>
+  <div class="header-divider"></div>
+  <div class="header-text">
+    <h1>Customer Consultation Intake</h1>
+    <p>First-Meeting Checklist &amp; Feature Selection</p>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- Quick Links -->
+<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+  <a href="design-inspiration.html" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:white;border:1px solid var(--gray-300);border-radius:8px;text-decoration:none;color:var(--gray-800);font-size:13px;font-weight:500;transition:all .2s;box-shadow:var(--shadow);"
+     onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold-dark)'"
+     onmouseout="this.style.borderColor='var(--gray-300)';this.style.color='var(--gray-800)'">
+    &#128247; Design & Inspiration Gallery
+  </a>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 1 — CUSTOMER INFO              -->
+<!-- Maps to JobTread: Customer entity       -->
+<!-- ═══════════════════════════════════════ -->
+<div class="card" id="sec-customer">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="num">1</span>
+    <h2>Customer Information</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="field"><label>First Name</label><input type="text" data-jt="customer.first_name" data-field="first_name"></div>
+      <div class="field"><label>Last Name</label><input type="text" data-jt="customer.last_name" data-field="last_name"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Email</label><input type="email" data-jt="customer.email" data-field="email"></div>
+      <div class="field"><label>Phone</label><input type="tel" data-jt="customer.phone" data-field="phone"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Address</label><input type="text" data-jt="customer.address" data-field="address" placeholder="Street address"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>City</label><input type="text" data-jt="customer.city" data-field="city"></div>
+      <div class="field" style="max-width:100px"><label>State</label><input type="text" data-jt="customer.state" data-field="state" value="NV" maxlength="2"></div>
+      <div class="field" style="max-width:120px"><label>ZIP</label><input type="text" data-jt="customer.zip" data-field="zip" maxlength="10"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Referral Source</label>
+        <select data-jt="customer.custom_fields.referral_source" data-field="referral_source">
+          <option value="">— Select —</option>
+          <option>Website</option>
+          <option>Google</option>
+          <option>Referral / Word of Mouth</option>
+          <option>Social Media</option>
+          <option>Home Show</option>
+          <option>Drive-By / Signage</option>
+          <option>Realtor</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Consultation Date</label><input type="date" data-jt="job.custom_fields.consultation_date" data-field="consultation_date"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 2 — PROJECT BASICS             -->
+<!-- Maps to JobTread: Job entity            -->
+<!-- ═══════════════════════════════════════ -->
+<div class="card" id="sec-project">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="num">2</span>
+    <h2>Project Basics</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="field"><label>Project Type</label>
+        <select data-jt="job.custom_fields.project_type" data-field="project_type">
+          <option value="">— Select —</option>
+          <option>New Pool Construction</option>
+          <option>Pool Remodel</option>
+          <option>Pool + Spa Combo</option>
+          <option>Spa Only</option>
+          <option>Water Feature Addition</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Approximate Budget Range</label>
+        <select data-jt="job.custom_fields.budget_range" data-field="budget_range">
+          <option value="">— Select —</option>
+          <option>Under $50k</option>
+          <option>$50k – $75k</option>
+          <option>$75k – $100k</option>
+          <option>$100k – $150k</option>
+          <option>$150k – $200k</option>
+          <option>$200k+</option>
+          <option>Undecided</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Desired Timeline</label>
+        <select data-jt="job.custom_fields.timeline" data-field="timeline">
+          <option value="">— Select —</option>
+          <option>ASAP</option>
+          <option>1–3 Months</option>
+          <option>3–6 Months</option>
+          <option>6–12 Months</option>
+          <option>Just Exploring</option>
+        </select>
+      </div>
+      <div class="field"><label>HOA Restrictions?</label>
+        <select data-jt="job.custom_fields.hoa" data-field="hoa">
+          <option value="">— Select —</option>
+          <option>Yes</option>
+          <option>No</option>
+          <option>Not Sure</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Lot / Yard Notes</label><textarea data-jt="job.custom_fields.lot_notes" data-field="lot_notes" placeholder="Slope, access issues, existing structures, etc."></textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 3 — POOL FEATURES              -->
+<!-- Maps to JobTread: Job custom fields     -->
+<!-- ═══════════════════════════════════════ -->
+<div class="card" id="sec-features">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="num">3</span>
+    <h2>Pool Shape & Features</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="card-body">
+
+    <div class="section-label">Pool Shape Preference</div>
+    <div class="grid-3" data-group="pool_shape">
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.shape_freeform" value="Freeform"><label>Freeform / Lagoon</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.shape_geometric" value="Geometric"><label>Geometric / Rectangle</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.shape_kidney" value="Kidney"><label>Kidney</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.shape_lpool" value="L-Shape"><label>L-Shape</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.shape_roman" value="Roman"><label>Roman / Grecian</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.shape_custom" value="Custom"><label>Custom Design</label></label>
+    </div>
+
+    <div class="section-label">Pool Size</div>
+    <div class="row">
+      <div class="field"><label>Approx. Length (ft)</label><input type="number" data-jt="job.custom_fields.pool_length" data-field="pool_length" min="0"></div>
+      <div class="field"><label>Approx. Width (ft)</label><input type="number" data-jt="job.custom_fields.pool_width" data-field="pool_width" min="0"></div>
+      <div class="field"><label>Desired Depth Range</label>
+        <select data-jt="job.custom_fields.depth_range" data-field="depth_range">
+          <option value="">— Select —</option>
+          <option>3' – 5' (shallow play pool)</option>
+          <option>3' – 6' (standard)</option>
+          <option>3' – 8' (deep end diving)</option>
+          <option>4' – 4' (uniform / sport)</option>
+          <option>Custom</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-label">Water Features</div>
+    <div class="grid-3" data-group="water_features">
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.feat_vanishing_edge" value="1"><label>Vanishing / Infinity Edge</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.feat_waterfall" value="1"><label>Waterfall / Grotto</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.feat_scuppers" value="1"><label>Scuppers / Sheer Descents</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.feat_bubblers" value="1"><label>Bubblers / Deck Jets</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.feat_rain_curtain" value="1"><label>Rain Curtain</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.feat_laminar_jets" value="1"><label>Laminar Jets</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.feat_spillover_spa" value="1"><label>Spillover Spa</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.feat_fountain" value="1"><label>Fountain</label></label>
+    </div>
+
+    <div class="section-label">Entry Features</div>
+    <div class="grid-3" data-group="entry_features">
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.entry_beach" value="1"><label>Beach Entry / Zero Entry</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.entry_tanning_ledge" value="1"><label>Tanning Ledge / Baja Shelf</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.entry_swim_up_bar" value="1"><label>Swim-Up Bar Seating</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.entry_steps" value="1"><label>Walk-In Steps</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.entry_bench" value="1"><label>Built-In Bench Seating</label></label>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 4 — SPA / HOT TUB             -->
+<!-- ═══════════════════════════════════════ -->
+<div class="card" id="sec-spa">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="num">4</span>
+    <h2>Spa / Hot Tub</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="field"><label>Include Spa?</label>
+        <select data-jt="job.custom_fields.spa_included" data-field="spa_included" onchange="document.getElementById('spa-details').style.display=this.value==='Yes'?'block':'none'">
+          <option value="">— Select —</option>
+          <option>Yes</option>
+          <option>No</option>
+          <option>Maybe</option>
+        </select>
+      </div>
+      <div class="field"><label>Spa Type</label>
+        <select data-jt="job.custom_fields.spa_type" data-field="spa_type">
+          <option value="">— Select —</option>
+          <option>Attached / Spillover</option>
+          <option>Detached</option>
+          <option>Perimeter Overflow</option>
+        </select>
+      </div>
+    </div>
+    <div id="spa-details">
+      <div class="grid-3" data-group="spa_features">
+        <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.spa_jets" value="1"><label>Therapy Jets</label></label>
+        <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.spa_blower" value="1"><label>Air Blower</label></label>
+        <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.spa_led" value="1"><label>LED Lighting</label></label>
+        <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.spa_heater" value="1"><label>Dedicated Heater</label></label>
+        <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.spa_auto_cover" value="1"><label>Auto Cover</label></label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 5 — FINISH & MATERIALS         -->
+<!-- ═══════════════════════════════════════ -->
+<div class="card" id="sec-finish">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="num">5</span>
+    <h2>Finish & Materials</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="field"><label>Interior Finish</label>
+        <select data-jt="job.custom_fields.interior_finish" data-field="interior_finish">
+          <option value="">— Select —</option>
+          <option>Standard Plaster</option>
+          <option>Quartz Aggregate (PebbleBrite, etc.)</option>
+          <option>Pebble Finish (PebbleTec, etc.)</option>
+          <option>Glass Bead</option>
+          <option>Tile (full interior)</option>
+          <option>Undecided</option>
+        </select>
+      </div>
+      <div class="field"><label>Waterline Tile</label>
+        <select data-jt="job.custom_fields.waterline_tile" data-field="waterline_tile">
+          <option value="">— Select —</option>
+          <option>Glass Mosaic</option>
+          <option>Porcelain</option>
+          <option>Stone</option>
+          <option>Standard 6" Tile</option>
+          <option>Undecided</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Coping Style</label>
+        <select data-jt="job.custom_fields.coping_style" data-field="coping_style">
+          <option value="">— Select —</option>
+          <option>Cantilevered Concrete</option>
+          <option>Natural Stone</option>
+          <option>Travertine</option>
+          <option>Brick</option>
+          <option>Precast</option>
+          <option>Undecided</option>
+        </select>
+      </div>
+      <div class="field"><label>Decking Material</label>
+        <select data-jt="job.custom_fields.decking" data-field="decking">
+          <option value="">— Select —</option>
+          <option>Cool Deck / Kool Deck</option>
+          <option>Pavers (Travertine)</option>
+          <option>Pavers (Concrete)</option>
+          <option>Stamped Concrete</option>
+          <option>Natural Stone</option>
+          <option>Artificial Turf</option>
+          <option>Undecided</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 6 — EQUIPMENT & SYSTEMS        -->
+<!-- ═══════════════════════════════════════ -->
+<div class="card" id="sec-equipment">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="num">6</span>
+    <h2>Equipment & Systems</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <div class="grid-3" data-group="equipment">
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_variable_pump" value="1"><label>Variable Speed Pump</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_salt_cell" value="1"><label>Salt Chlorine Generator</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_ozone" value="1"><label>Ozone System</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_uv" value="1"><label>UV Sanitizer</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_heat_pump" value="1"><label>Heat Pump</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_gas_heater" value="1"><label>Gas Heater</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_solar_heat" value="1"><label>Solar Heating</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_automation" value="1"><label>Automation (Pentair/Jandy)</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_robotic_cleaner" value="1"><label>In-Floor Cleaning System</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_led_lights" value="1"><label>LED Color Lighting</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_auto_cover" value="1"><label>Automatic Pool Cover</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.equip_safety_cover" value="1"><label>Safety Cover</label></label>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 7 — OUTDOOR LIVING ADD-ONS     -->
+<!-- ═══════════════════════════════════════ -->
+<div class="card" id="sec-outdoor">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="num">7</span>
+    <h2>Outdoor Living Add-Ons</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <div class="grid-3" data-group="outdoor">
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.outdoor_bbq" value="1"><label>BBQ / Outdoor Kitchen</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.outdoor_firepit" value="1"><label>Fire Pit / Fire Bowls</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.outdoor_fireplace" value="1"><label>Fireplace</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.outdoor_pergola" value="1"><label>Pergola / Shade Structure</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.outdoor_pavilion" value="1"><label>Pavilion / Cabana</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.outdoor_landscape" value="1"><label>Landscape / Hardscape</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.outdoor_fence" value="1"><label>Pool Fencing</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.outdoor_slide" value="1"><label>Pool Slide</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.outdoor_diving" value="1"><label>Diving Board</label></label>
+      <label class="check-item"><input type="checkbox" data-jt="job.custom_fields.outdoor_sport" value="1"><label>Sport / Volleyball Net</label></label>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SECTION 8 — NOTES                      -->
+<!-- ═══════════════════════════════════════ -->
+<div class="card" id="sec-notes">
+  <div class="card-header" onclick="toggleCard(this)">
+    <span class="num">8</span>
+    <h2>Additional Notes</h2>
+    <span class="chevron">&#9660;</span>
+  </div>
+  <div class="card-body">
+    <div class="row">
+      <div class="field"><label>Customer Notes / Vision</label><textarea data-jt="job.description" data-field="notes" rows="4" placeholder="Describe the customer's vision, inspirations, must-haves, concerns..."></textarea></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>Salesperson Notes (Internal)</label><textarea data-jt="job.custom_fields.internal_notes" data-field="internal_notes" rows="3" placeholder="Follow-up actions, site visit observations, next steps..."></textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SUMMARY & ACTIONS                       -->
+<!-- ═══════════════════════════════════════ -->
+<div class="card summary-card" id="sec-summary">
+  <div class="card-header">
+    <span class="num" style="background:var(--green)">&#10003;</span>
+    <h2>Summary & Export</h2>
+  </div>
+  <div class="card-body">
+    <div id="summary-content" class="summary-content">
+      <p style="color:var(--gray-600);font-style:italic">Fill out the form above — the summary will auto-update here.</p>
+    </div>
+    <div class="actions" style="margin-top:20px">
+      <button class="btn btn-primary" onclick="exportJSON()">&#128190; Export JSON (for JobTread)</button>
+      <button class="btn btn-secondary" onclick="copyClipboard()">&#128203; Copy Summary</button>
+      <button class="btn btn-secondary" onclick="printForm()">&#128424; Print</button>
+      <button class="btn btn-danger" onclick="if(confirm('Clear all fields?'))resetForm()">&#128465; Reset</button>
+    </div>
+    <p class="hint" style="margin-top:12px">JSON export uses <code>data-jt</code> field mapping for JobTread API compatibility. Customer fields map to the Customer entity; all other fields map to Job custom fields.</p>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<div class="footer">&copy; 2026 Paragon Pools &mdash; <a href="index.html">Paragon Tools</a> / Customer Tools</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Toggle card collapse ── */
+function toggleCard(hdr) {
+  hdr.classList.toggle('collapsed');
+  const body = hdr.nextElementSibling;
+  body.classList.toggle('hidden');
+}
+
+/* ── Checkbox styling ── */
+document.querySelectorAll('.check-item input[type=checkbox]').forEach(cb => {
+  cb.addEventListener('change', function() {
+    this.closest('.check-item').classList.toggle('checked', this.checked);
+    updateSummary();
+  });
+});
+
+/* ── Auto-update summary on any input ── */
+document.querySelectorAll('input, select, textarea').forEach(el => {
+  el.addEventListener('input', updateSummary);
+  el.addEventListener('change', updateSummary);
+});
+
+function updateSummary() {
+  const v = (sel) => { const e = document.querySelector(sel); return e ? e.value.trim() : ''; };
+  const checked = (group) => {
+    const items = [];
+    document.querySelectorAll(`[data-group="${group}"] input[type=checkbox]:checked`).forEach(cb => {
+      items.push(cb.closest('.check-item').querySelector('label:last-of-type').textContent.trim());
+    });
+    return items;
+  };
+
+  const name = [v('[data-field="first_name"]'), v('[data-field="last_name"]')].filter(Boolean).join(' ');
+  const email = v('[data-field="email"]');
+  const phone = v('[data-field="phone"]');
+  const addr = [v('[data-field="address"]'), v('[data-field="city"]'), v('[data-field="state"]'), v('[data-field="zip"]')].filter(Boolean).join(', ');
+
+  const shapes = checked('pool_shape');
+  const water = checked('water_features');
+  const entry = checked('entry_features');
+  const spa = checked('spa_features');
+  const equip = checked('equipment');
+  const outdoor = checked('outdoor');
+
+  let html = '';
+
+  // Customer
+  if (name || email || phone) {
+    html += '<div class="s-section"><div class="s-title">Customer</div>';
+    html += `<div>${name || '<em>No name</em>'}`;
+    if (email) html += ` &mdash; ${email}`;
+    if (phone) html += ` &mdash; ${phone}`;
+    html += '</div>';
+    if (addr) html += `<div style="color:var(--gray-600)">${addr}</div>`;
+    html += '</div>';
+  }
+
+  // Project
+  const pt = v('[data-field="project_type"]');
+  const br = v('[data-field="budget_range"]');
+  const tl = v('[data-field="timeline"]');
+  if (pt || br || tl) {
+    html += '<div class="s-section"><div class="s-title">Project</div><ul class="s-list">';
+    if (pt) html += `<li>Type: ${pt}</li>`;
+    if (br) html += `<li>Budget: ${br}</li>`;
+    if (tl) html += `<li>Timeline: ${tl}</li>`;
+    html += '</ul></div>';
+  }
+
+  // Pool
+  const pl = v('[data-field="pool_length"]');
+  const pw = v('[data-field="pool_width"]');
+  const dr = v('[data-field="depth_range"]');
+  if (shapes.length || pl || pw || dr) {
+    html += '<div class="s-section"><div class="s-title">Pool</div><ul class="s-list">';
+    if (shapes.length) html += `<li>Shape: ${shapes.join(', ')}</li>`;
+    if (pl && pw) html += `<li>Size: ~${pl}' x ${pw}'</li>`;
+    if (dr) html += `<li>Depth: ${dr}</li>`;
+    html += '</ul></div>';
+  }
+
+  // Features
+  if (water.length || entry.length) {
+    html += '<div class="s-section"><div class="s-title">Features</div><ul class="s-list">';
+    if (water.length) html += `<li>Water: ${water.join(', ')}</li>`;
+    if (entry.length) html += `<li>Entry: ${entry.join(', ')}</li>`;
+    html += '</ul></div>';
+  }
+
+  // Spa
+  const si = v('[data-field="spa_included"]');
+  const st = v('[data-field="spa_type"]');
+  if (si === 'Yes' || spa.length) {
+    html += '<div class="s-section"><div class="s-title">Spa</div><ul class="s-list">';
+    if (st) html += `<li>Type: ${st}</li>`;
+    if (spa.length) html += `<li>Features: ${spa.join(', ')}</li>`;
+    html += '</ul></div>';
+  }
+
+  // Finish
+  const fi = v('[data-field="interior_finish"]');
+  const cs = v('[data-field="coping_style"]');
+  const dk = v('[data-field="decking"]');
+  if (fi || cs || dk) {
+    html += '<div class="s-section"><div class="s-title">Finishes</div><ul class="s-list">';
+    if (fi) html += `<li>Interior: ${fi}</li>`;
+    if (cs) html += `<li>Coping: ${cs}</li>`;
+    if (dk) html += `<li>Decking: ${dk}</li>`;
+    html += '</ul></div>';
+  }
+
+  // Equipment
+  if (equip.length) {
+    html += `<div class="s-section"><div class="s-title">Equipment</div><ul class="s-list"><li>${equip.join(', ')}</li></ul></div>`;
+  }
+
+  // Outdoor
+  if (outdoor.length) {
+    html += `<div class="s-section"><div class="s-title">Outdoor Living</div><ul class="s-list"><li>${outdoor.join(', ')}</li></ul></div>`;
+  }
+
+  // Notes
+  const notes = v('[data-field="notes"]');
+  if (notes) {
+    html += `<div class="s-section"><div class="s-title">Notes</div><div style="color:var(--gray-600)">${notes.replace(/\n/g,'<br>')}</div></div>`;
+  }
+
+  if (!html) html = '<p style="color:var(--gray-300);font-style:italic">Fill out the form above — the summary will auto-update here.</p>';
+  document.getElementById('summary-content').innerHTML = html;
+}
+
+/* ── Export JSON (JobTread-compatible structure) ── */
+function exportJSON() {
+  const data = { customer: { custom_fields: {} }, job: { custom_fields: {} } };
+
+  // Text/select inputs
+  document.querySelectorAll('[data-jt]').forEach(el => {
+    if (el.type === 'checkbox') return; // handle separately
+    const path = el.getAttribute('data-jt');
+    const val = el.value.trim();
+    if (!val) return;
+    setNestedValue(data, path, val);
+  });
+
+  // Checkboxes
+  document.querySelectorAll('input[type=checkbox][data-jt]').forEach(cb => {
+    const path = cb.getAttribute('data-jt');
+    setNestedValue(data, path, cb.checked);
+  });
+
+  // Add metadata
+  data._meta = {
+    source: 'paragon_consultation_intake',
+    version: '1.0',
+    exported_at: new Date().toISOString(),
+    exported_by: 'Paragon Tools'
+  };
+
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const name = [
+    data.customer.last_name || 'customer',
+    data.customer.first_name || '',
+    new Date().toISOString().slice(0,10)
+  ].filter(Boolean).join('_');
+  a.href = url;
+  a.download = `${name}_intake.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('JSON exported!');
+}
+
+function setNestedValue(obj, path, value) {
+  const keys = path.split('.');
+  let cur = obj;
+  for (let i = 0; i < keys.length - 1; i++) {
+    if (!cur[keys[i]]) cur[keys[i]] = {};
+    cur = cur[keys[i]];
+  }
+  cur[keys[keys.length - 1]] = value;
+}
+
+/* ── Copy summary to clipboard ── */
+function copyClipboard() {
+  const el = document.getElementById('summary-content');
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(() => showToast('Summary copied!'));
+}
+
+/* ── Print ── */
+function printForm() { window.print(); }
+
+/* ── Reset ── */
+function resetForm() {
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if (el.type === 'checkbox') {
+      el.checked = false;
+      el.closest('.check-item').classList.remove('checked');
+    } else if (el.tagName === 'SELECT') {
+      el.selectedIndex = 0;
+    } else if (el.getAttribute('data-field') === 'state') {
+      el.value = 'NV';
+    } else {
+      el.value = '';
+    }
+  });
+  updateSummary();
+  showToast('Form cleared');
+}
+
+/* ── Toast notification ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Set today's date as default for consultation date
+document.querySelector('[data-field="consultation_date"]').valueAsDate = new Date();
+
+// Init summary
+updateSummary();
+</script>
+
+</body>
+</html>
