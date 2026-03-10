@@ -559,39 +559,20 @@
     </div>
   </div>
 
-  <!-- SECTION 3: Equipment Package -->
+  <!-- Equipment Override -->
   <div class="card" id="sec-equipment">
     <div class="card-header" onclick="toggleCard(this)">
       <span class="num">3</span>
-      <h2>Equipment Package</h2>
+      <h2>Equipment Override</h2>
       <span class="chevron">&#9660;</span>
     </div>
     <div class="card-body">
-      <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px;">
-        Equipment items auto-populate based on features selected above. Override any cost by typing directly in the cost field.
-      </p>
-      <div id="equipmentList"></div>
-      <div class="row" style="margin-top:14px;">
+      <div class="row">
         <div class="field"><label>Equipment Package Total (Your Cost)</label>
-          <input type="number" id="equipmentOverride" placeholder="Auto-calculated" oninput="recalc()">
-          <div class="hint">Enter Heritage Plus quote total here to override auto-calc</div>
+          <input type="number" id="equipmentOverride" placeholder="Leave blank to auto-calculate" oninput="recalc()">
+          <div class="hint">Enter Heritage Plus quote total to override auto-calc from unit costs</div>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- SECTION 4: Cost Overrides -->
-  <div class="card" id="sec-overrides">
-    <div class="card-header" onclick="toggleCard(this)">
-      <span class="num">4</span>
-      <h2>Manual Cost Overrides</h2>
-      <span class="chevron">&#9660;</span>
-    </div>
-    <div class="card-body">
-      <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px;">
-        Override any auto-calculated line item. Leave blank to use the calculated value.
-      </p>
-      <div id="overrideList"></div>
     </div>
   </div>
 
