@@ -163,6 +163,15 @@
   .price-box .price-value { font-size: 32px; font-weight: 800; color: var(--charcoal); }
   .price-box .price-sub { font-size: 11px; color: var(--charcoal); opacity: 0.6; margin-top: 2px; }
 
+  /* Stat cards row below margin slider */
+  .stat-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .stat-card { background: white; border: 1px solid var(--gray-200); border-radius: 8px; padding: 10px 8px; text-align: center; }
+  .stat-card .sc-label { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--gray-500); margin-bottom: 4px; }
+  .stat-card .sc-value { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .stat-card.billing .sc-value { color: var(--gold-dark); }
+  .stat-card.cost .sc-value { color: var(--gray-800); }
+  .stat-card.margin-dollars .sc-value { color: #16a34a; }
+
   /* === SETTINGS TAB === */
   .settings-container { max-width: 900px; margin: 0 auto; padding: 24px 28px; }
   .settings-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
@@ -573,6 +582,21 @@
     <div class="margin-value" id="marginDisplay">30%</div>
     <input type="range" id="marginSlider" min="10" max="50" value="30" step="1" oninput="updateMargin()">
     <div class="margin-labels"><span>10%</span><span>30%</span><span>50%</span></div>
+  </div>
+
+  <div class="stat-cards">
+    <div class="stat-card billing">
+      <div class="sc-label">Billing</div>
+      <div class="sc-value" id="statBilling">$0</div>
+    </div>
+    <div class="stat-card cost">
+      <div class="sc-label">My Cost</div>
+      <div class="sc-value" id="statCost">$0</div>
+    </div>
+    <div class="stat-card margin-dollars">
+      <div class="sc-label">Margin $</div>
+      <div class="sc-value" id="statMargin">$0</div>
+    </div>
   </div>
 
   <div class="side-heading">Cost Breakdown</div>
@@ -1143,6 +1167,11 @@ function recalc() {
   document.getElementById('totalCost').textContent = '$' + totalCost.toLocaleString();
   document.getElementById('totalPrice').textContent = '$' + totalPrice.toLocaleString();
   document.getElementById('priceMarginNote').textContent = v('marginSlider') + '%';
+
+  // Stat cards
+  document.getElementById('statBilling').textContent = '$' + totalPrice.toLocaleString();
+  document.getElementById('statCost').textContent = '$' + totalCost.toLocaleString();
+  document.getElementById('statMargin').textContent = '$' + (totalPrice - totalCost).toLocaleString();
 }
 
 function updateMargin() {
