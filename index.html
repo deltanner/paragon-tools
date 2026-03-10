@@ -56,9 +56,31 @@
     .hero h1 { font-size: 22px; }
     .cat-grid { grid-template-columns: 1fr; }
   }
+
+  /* === PASSWORD GATE === */
+  #gateOverlay{display:none;position:fixed;inset:0;z-index:99999;background:#1a1a1a;align-items:center;justify-content:center}
+  .gate-box{background:#2d2d2d;border:1px solid #CC9933;border-radius:12px;padding:40px 36px;text-align:center;max-width:360px;width:90%}
+  .gate-box h2{color:#CC9933;font-size:20px;margin-bottom:6px;font-weight:600}
+  .gate-box p{color:#999;font-size:13px;margin-bottom:20px}
+  .gate-box input{width:100%;padding:12px 14px;border:1px solid #555;border-radius:8px;background:#1a1a1a;color:white;font-size:16px;text-align:center;letter-spacing:2px;outline:none;box-sizing:border-box}
+  .gate-box input:focus{border-color:#CC9933}
+  .gate-box button{margin-top:14px;width:100%;padding:12px;border:none;border-radius:8px;background:#CC9933;color:#1a1a1a;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s}
+  .gate-box button:hover{background:#e6ac39}
+  #gateError{display:none;color:#d93025;font-size:13px;margin-top:10px}
 </style>
 </head>
 <body>
+
+<div id="gateOverlay" style="display:flex">
+  <div class="gate-box">
+    <h2>Paragon Tools</h2>
+    <p>Enter the team password to continue</p>
+    <input type="password" id="gateInput" placeholder="Password" onkeydown="if(event.key==='Enter')tryPassword()" autofocus>
+    <button onclick="tryPassword()">Enter</button>
+    <div id="gateError">Incorrect password. Try again.</div>
+  </div>
+</div>
+
 
 <!-- Hero section -->
 <div class="hero">
@@ -124,6 +146,33 @@
 </div>
 
 <div class="footer">&copy; 2026 Paragon Pools</div>
+
+
+<script>
+  const PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  async function tryPassword() {
+    const inp = document.getElementById('gateInput');
+    const hash = await sha256(inp.value.trim());
+    if (hash === PASS_HASH) {
+      sessionStorage.setItem('pp_auth', PASS_HASH);
+      document.getElementById('gateOverlay').style.display = 'none';
+    } else {
+      const err = document.getElementById('gateError');
+      err.style.display = 'block';
+      inp.value = '';
+      inp.focus();
+      setTimeout(() => err.style.display = 'none', 2000);
+    }
+  }
+  // Check if already authenticated
+  if (sessionStorage.getItem('pp_auth') === PASS_HASH) {
+    document.getElementById('gateOverlay').style.display = 'none';
+  }
+</script>
 
 </body>
 </html>

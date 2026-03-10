@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+  (function(){
+    var PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
+    if (sessionStorage.getItem('pp_auth') !== PASS_HASH) {
+      window.location.replace('index.html');
+    }
+  })();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">

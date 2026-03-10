@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+  (function(){
+    var PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
+    if (sessionStorage.getItem('pp_auth') !== PASS_HASH) {
+      window.location.replace('index.html');
+    }
+  })();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -20,212 +28,7 @@
   });
   const fbDb = firebase.database();
 
-  // ── Password Gate ──
-  // SHA-256 hash of the password so it's not plaintext in source
-  const PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
-  async function sha256(str) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-  async function checkGate() {
-    const saved = sessionStorage.getItem('pp_auth');
-    if (saved === PASS_HASH) { unlockApp(); return; }
-    document.getElementById('gateOverlay').style.display = 'flex';
-  }
-  async function tryPassword() {
-    const inp = document.getElementById('gateInput');
-    const hash = await sha256(inp.value.trim());
-    if (hash === PASS_HASH) {
-      sessionStorage.setItem('pp_auth', PASS_HASH);
-      unlockApp();
-    } else {
-      const err = document.getElementById('gateError');
-      err.style.display = 'block';
-      inp.value = '';
-      inp.focus();
-      setTimeout(() => err.style.display = 'none', 2000);
-    }
-  }
-  function unlockApp() {
-    document.getElementById('gateOverlay').style.display = 'none';
-    document.body.style.overflow = '';
-  }
-</script>
-<style>
-  /* ── Password Gate Styles ── */
-  #gateOverlay{display:none;position:fixed;inset:0;z-index:99999;background:#1a1a1a;align-items:center;justify-content:center;flex-direction:column;gap:20px}
-  #gateOverlay .gate-box{background:#2d2d2d;border:1px solid #CC9933;border-radius:12px;padding:40px 36px;text-align:center;max-width:360px;width:90%}
-  #gateOverlay h2{color:#CC9933;font-size:20px;margin-bottom:6px;font-weight:600}
-  #gateOverlay p{color:#999;font-size:13px;margin-bottom:20px}
-  #gateOverlay input{width:100%;padding:12px 14px;border:1px solid #555;border-radius:8px;background:#1a1a1a;color:white;font-size:16px;text-align:center;letter-spacing:2px;outline:none}
-  #gateOverlay input:focus{border-color:#CC9933}
-  #gateOverlay button{margin-top:14px;width:100%;padding:12px;border:none;border-radius:8px;background:#CC9933;color:#1a1a1a;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s}
-  #gateOverlay button:hover{background:#e6ac39}
-  #gateError{display:none;color:#d93025;font-size:13px;margin-top:10px}
-</style>
-<style>
-  :root {
-    --gold: #CC9933;
-    --gold-dark: #a67a2a;
-    --gold-light: #faf3e6;
-    --gold-lighter: #fdf8f0;
-    --black: #1a1a1a;
-    --charcoal: #2d2d2d;
-    --green: #1e8e3e;
-    --green-light: #e6f4ea;
-    --orange: #e8710a;
-    --orange-light: #fef3e6;
-    --red: #d93025;
-    --gray-50: #f8f9fa;
-    --gray-100: #f1f3f4;
-    --gray-200: #e8eaed;
-    --gray-300: #dadce0;
-    --gray-600: #5f6368;
-    --gray-800: #3c4043;
-    --gray-900: #202124;
-    --radius: 10px;
-    --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
-    --shadow-lg: 0 4px 12px rgba(0,0,0,0.15);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--gray-100); color: var(--gray-900); line-height: 1.5; }
-  .header { background: var(--black); color: white; padding: 20px 32px; display: flex; align-items: center; gap: 20px; }
-  .header-logo { height: 60px; width: auto; }
-  .header-text h1 { font-size: 20px; font-weight: 600; color: white; letter-spacing: 0.5px; }
-  .header-text p { color: var(--gold); font-size: 13px; margin-top: 2px; font-weight: 500; letter-spacing: 0.3px; }
-  .header-divider { width: 1px; height: 50px; background: #444; margin: 0 4px; }
-  .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
-  .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
-  .card-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
-  .card-header h2 { font-size: 16px; font-weight: 600; color: var(--gray-800); }
-  .card-header .num { background: var(--gold); color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
-  .card-body { padding: 20px; }
-  .row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
-  .field { flex: 1; min-width: 180px; }
-  .field label { display: block; font-size: 13px; font-weight: 500; color: var(--gray-600); margin-bottom: 4px; }
-  .field input, .field select { width: 100%; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 14px; transition: border 0.2s; }
-  .field input:focus, .field select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(204,153,51,0.2); }
-  .hint { font-size: 11px; color: var(--gray-600); margin-top: 2px; }
-  .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-  .check-item { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; cursor: pointer; transition: all 0.15s; }
-  .check-item:hover { border-color: var(--gold); background: var(--gold-lighter); }
-  .check-item.checked { border-color: var(--gold); background: var(--gold-light); }
-  .check-item input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--gold); cursor: pointer; }
-  .check-item label { font-size: 13px; cursor: pointer; flex: 1; }
-  .check-item .loss-val { font-size: 11px; color: var(--gray-600); white-space: nowrap; }
-  .circuit-tabs { display: flex; gap: 4px; padding: 12px 20px 0; border-bottom: 1px solid var(--gray-200); flex-wrap: wrap; }
-  .circuit-tab { padding: 8px 16px; border: none; background: none; cursor: pointer; font-size: 13px; font-weight: 500; color: var(--gray-600); border-bottom: 2px solid transparent; transition: all 0.2s; border-radius: 6px 6px 0 0; }
-  .circuit-tab.active { color: var(--gold-dark); border-bottom-color: var(--gold); background: var(--gold-light); }
-  .circuit-tab.add { color: var(--green); }
-  .circuit-tab .remove { margin-left: 6px; color: var(--red); font-weight: 700; font-size: 14px; }
-  .circuit-content { display: none; }
-  .circuit-content.active { display: block; }
-  .section-label { font-size: 13px; font-weight: 600; color: var(--gray-800); margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 1px solid var(--gray-200); }
-  .section-label:first-child { margin-top: 0; }
-  .fitting-row { display: flex; align-items: center; gap: 12px; padding: 6px 0; }
-  .fitting-row .fname { flex: 1; font-size: 13px; min-width: 160px; }
-  .fitting-row input { width: 70px; text-align: center; padding: 6px 8px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 14px; }
-  .fitting-row .eq-len { font-size: 12px; color: var(--gray-600); min-width: 80px; text-align: right; }
-  .results-card { border: 2px solid var(--gold); }
-  .results-card .card-header { background: var(--gold-light); }
-  .results-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
-  .result-box { padding: 16px; border-radius: 8px; text-align: center; }
-  .result-box.primary { background: var(--gold-light); border: 1px solid #e6cc8a; }
-  .result-box.success { background: var(--green-light); border: 1px solid #a8dab5; }
-  .result-box.warn { background: var(--orange-light); border: 1px solid #f5c98a; }
-  .result-box .val { font-size: 28px; font-weight: 700; line-height: 1.2; }
-  .result-box.primary .val { color: var(--gold-dark); }
-  .result-box.success .val { color: var(--green); }
-  .result-box.warn .val { color: var(--orange); }
-  .result-box .lbl { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
-  .breakdown { margin-top: 16px; }
-  .breakdown table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .breakdown th { text-align: left; padding: 8px 12px; background: var(--gray-50); border-bottom: 2px solid var(--gray-300); font-weight: 600; color: var(--gray-600); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .breakdown td { padding: 8px 12px; border-bottom: 1px solid var(--gray-200); }
-  .breakdown tr:last-child td { border-bottom: none; }
-  .breakdown .total-row { font-weight: 700; background: var(--gold-light); }
-  .breakdown .total-row td { border-top: 2px solid var(--gold); }
-  .pump-rec { margin-top: 16px; padding: 16px; background: var(--green-light); border: 1px solid #a8dab5; border-radius: 8px; }
-  .pump-rec h3 { font-size: 14px; font-weight: 600; color: var(--green); margin-bottom: 8px; }
-  .pump-rec p { font-size: 13px; color: var(--gray-800); margin-bottom: 4px; }
-  .pump-rec .pump-list { margin-top: 8px; }
-  .pump-rec .pump-item { padding: 8px 12px; background: white; border-radius: 6px; margin-bottom: 6px; font-size: 13px; border: 1px solid #a8dab5; }
-  .btn-calc { display: block; width: 100%; padding: 14px; background: var(--black); color: var(--gold); border: 2px solid var(--gold); border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.2s; margin-top: 8px; letter-spacing: 0.5px; }
-  .btn-calc:hover { background: var(--gold); color: var(--black); }
-  .pipe-run-group { background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px; margin-bottom: 12px; position: relative; }
-  .pipe-run-group .run-title { font-size: 12px; font-weight: 600; color: var(--gold-dark); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
-  .add-run-btn, .remove-run-btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
-  .add-run-btn { background: var(--green-light); color: var(--green); border: 1px solid #a8dab5; margin-top: 8px; }
-  .remove-run-btn { background: #fce8e6; color: var(--red); border: 1px solid #f5a8a2; position: absolute; top: 10px; right: 10px; font-size: 11px; }
-  /* === SHARED NAV BAR === */
-  .topnav { background: var(--black); padding: 0 24px; display: flex; align-items: center; height: 48px; gap: 14px; border-bottom: 2px solid var(--gold); }
-  .topnav a.nav-home { display: flex; align-items: center; gap: 10px; text-decoration: none; color: white; font-size: 14px; font-weight: 600; letter-spacing: 0.3px; transition: color 0.2s; flex-shrink: 0; }
-  .topnav a.nav-home:hover { color: var(--gold); }
-  .topnav .nav-logo { height: 28px; width: auto; flex-shrink: 0; }
-  .topnav .nav-sep { color: #555; font-size: 18px; flex-shrink: 0; }
-  .topnav .nav-current { color: var(--gold); font-size: 13px; font-weight: 500; white-space: nowrap; }
-  /* === POOL NAME / SAVE BAR === */
-  .pool-bar { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; padding: 16px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .pool-bar .pool-name-field { flex: 1; min-width: 200px; }
-  .pool-bar .pool-name-field input { width: 100%; padding: 10px 14px; border: 2px solid var(--gray-300); border-radius: 8px; font-size: 16px; font-weight: 600; color: var(--gray-900); transition: border 0.2s; }
-  .pool-bar .pool-name-field input:focus { outline: none; border-color: var(--gold); }
-  .pool-bar .pool-name-field input::placeholder { color: var(--gray-300); font-weight: 400; }
-  .pool-bar .bar-btns { display: flex; gap: 8px; flex-wrap: wrap; }
-  .bar-btn { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
-  .bar-btn.save { background: var(--black); color: var(--gold); border-color: var(--gold); }
-  .bar-btn.save:hover { background: var(--gold); color: var(--black); }
-  .bar-btn.lib { background: white; color: var(--gray-800); border-color: var(--gray-300); }
-  .bar-btn.lib:hover { border-color: var(--gold); color: var(--gold-dark); }
-  .bar-btn.new { background: white; color: var(--gray-800); border-color: var(--gray-300); }
-  .bar-btn.new:hover { border-color: var(--gold); color: var(--gold-dark); }
-  .bar-btn svg { width: 15px; height: 15px; }
-
-  /* === LIBRARY PANEL === */
-  .library-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-  .library-overlay.open { display: flex; }
-  .library-panel { background: white; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
-  .library-panel .lib-header { padding: 20px 24px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
-  .library-panel .lib-header h2 { font-size: 18px; font-weight: 600; color: var(--gray-900); }
-  .library-panel .lib-close { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--gray-600); padding: 4px; line-height: 1; }
-  .library-panel .lib-close:hover { color: var(--red); }
-  .library-panel .lib-body { overflow-y: auto; padding: 16px 24px; flex: 1; }
-  .library-panel .lib-empty { text-align: center; padding: 40px 20px; color: var(--gray-600); font-size: 14px; }
-  .lib-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid var(--gray-200); border-radius: 8px; margin-bottom: 8px; transition: all 0.15s; cursor: pointer; }
-  .lib-item:hover { border-color: var(--gold); background: var(--gold-lighter); }
-  .lib-item .li-info { flex: 1; }
-  .lib-item .li-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
-  .lib-item .li-meta { font-size: 11px; color: var(--gray-600); margin-top: 2px; }
-  .lib-item .li-actions { display: flex; gap: 6px; }
-  .lib-item .li-btn { padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid; }
-  .lib-item .li-btn.load { background: var(--black); color: var(--gold); border-color: var(--gold); }
-  .lib-item .li-btn.load:hover { background: var(--gold); color: var(--black); }
-  .lib-item .li-btn.del { background: white; color: var(--red); border-color: #f5a8a2; }
-  .lib-item .li-btn.del:hover { background: #fce8e6; }
-
-  .footer { text-align: center; padding: 20px; font-size: 11px; color: var(--gray-600); }
-  .footer a { color: var(--gold-dark); text-decoration: none; }
-  @media (max-width: 600px) { .row { flex-direction: column; } .field { min-width: 100%; } .results-grid { grid-template-columns: 1fr 1fr; } .header { flex-direction: column; text-align: center; } }
-  .cost-hidden { display: none; }
-  .cost-chev-closed { transform: rotate(-90deg); }
-</style>
-</head>
-<body style="overflow:hidden">
-
-<!-- Password Gate -->
-<div id="gateOverlay">
-  <div class="gate-box">
-    <svg viewBox="120 0 160 135" xmlns="http://www.w3.org/2000/svg" style="height:48px;width:auto;margin-bottom:16px;">
-      <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
-      <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
-    </svg>
-    <h2>Paragon Tools</h2>
-    <p>Enter the team password to continue</p>
-    <input type="password" id="gateInput" placeholder="Password" onkeydown="if(event.key==='Enter')tryPassword()" autofocus>
-    <button onclick="tryPassword()">Unlock</button>
-    <div id="gateError">Incorrect password. Try again.</div>
-  </div>
-</div>
-<script>checkGate();</script>
+  </script>
 
 <div class="topnav">
   <a class="nav-home" href="index.html">
