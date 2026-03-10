@@ -145,9 +145,20 @@
   .cost-section-title .section-total { font-size: 13px; color: var(--gray-800); font-weight: 700; width: 80px; text-align: right; }
   .cost-line { display: flex; align-items: center; padding: 4px 0; font-size: 13px; }
   .cost-line .item-name { flex: 1; color: var(--gray-600); }
-  .cost-line .item-cost { color: var(--gray-800); font-weight: 500; font-variant-numeric: tabular-nums; width: 80px; text-align: right; }
+  .cost-line .item-cost { color: var(--gray-800); font-weight: 500; font-variant-numeric: tabular-nums; width: 86px; text-align: right; }
   .cost-line .item-price { color: var(--gold-dark); font-weight: 500; font-variant-numeric: tabular-nums; width: 80px; text-align: right; }
   .cost-line .item-cost.zero, .cost-line .item-price.zero { color: var(--gray-300); }
+  .cost-override-input {
+    width: 100%; border: none; background: transparent; text-align: right; font: inherit; font-size: 13px;
+    font-weight: 500; color: var(--gray-800); font-variant-numeric: tabular-nums; padding: 0; outline: none;
+    cursor: pointer;
+  }
+  .cost-override-input::placeholder { color: var(--gray-800); font-weight: 500; }
+  .cost-override-input:focus { background: var(--gold-lighter); border-radius: 3px; cursor: text; }
+  .cost-override-input:focus::placeholder { color: var(--gray-300); }
+  .item-cost.overridden .cost-override-input { color: var(--orange); font-weight: 600; }
+  .item-cost.overridden { position: relative; }
+  .item-cost.overridden::after { content: ''; position: absolute; bottom: 0; left: 10%; width: 80%; height: 1px; background: var(--orange); opacity: 0.4; }
   .cost-divider { border-top: 2px solid var(--gray-800); margin: 10px 0 8px; }
   .cost-total-line { display: flex; align-items: center; padding: 6px 0; font-size: 14px; font-weight: 700; }
   .cost-total-line .total-label { flex: 1; color: var(--gray-800); }
@@ -954,6 +965,18 @@ function enforceRules() {
 }
 
 // ---- Main Calculation Engine ----
+// Per-quote cost overrides: { lineId: overriddenCost }
+window.costOverrides = window.costOverrides || {};
+
+function setCostOverride(lineId, val) {
+  if (val === '' || val === null || val === undefined) {
+    delete window.costOverrides[lineId];
+  } else {
+    window.costOverrides[lineId] = parseFloat(val);
+  }
+  recalc();
+}
+
 function recalc() {
   enforceRules();
 
@@ -1029,68 +1052,68 @@ function recalc() {
   const lines = [];
 
   // 1. Site Prep
-  lines.push({ cat: 'Site Prep', item: 'Geotechnical Analysis', cost: s('geotech') });
-  lines.push({ cat: 'Site Prep', item: 'Excavation', cost: s('excavation') });
-  lines.push({ cat: 'Site Prep', item: 'Forming Labor/Mat', cost: s('forming') });
+  lines.push({ id: 'site_geotech', cat: 'Site Prep', item: 'Geotechnical Analysis', cost: s('geotech') });
+  lines.push({ id: 'site_excavation', cat: 'Site Prep', item: 'Excavation', cost: s('excavation') });
+  lines.push({ id: 'site_forming', cat: 'Site Prep', item: 'Forming Labor/Mat', cost: s('forming') });
   const permitKey = 'permit_' + (city === 'stgeorge' ? 'stgeorge' : city === 'washington' ? 'washington' : city === 'hurricane' ? 'hurricane' : city === 'ivins' ? 'ivins' : city === 'santaclara' ? 'santaclara' : 'other');
-  lines.push({ cat: 'Site Prep', item: 'Permits & Fees', cost: s(permitKey) });
-  if (s('generalCond') > 0) lines.push({ cat: 'Site Prep', item: 'General Conditions', cost: s('generalCond') });
+  lines.push({ id: 'site_permits', cat: 'Site Prep', item: 'Permits & Fees', cost: s(permitKey) });
+  if (s('generalCond') > 0) lines.push({ id: 'site_generalcond', cat: 'Site Prep', item: 'General Conditions', cost: s('generalCond') });
 
   // 2. Shell
   const rebarLF = perimeter + allSpaPerim;
   const rebarCost = rebarLF * s('rebarPerLF');
-  lines.push({ cat: 'Shell', item: 'Steel / Rebar' + (rebarLF > 0 ? ' (' + rebarLF.toLocaleString() + ' lf)' : ''), cost: rebarCost });
-  lines.push({ cat: 'Shell', item: 'Shotcrete' + (shotcreteCY > 0 ? ' (' + shotcreteCY + ' cy)' : ''), cost: shotcreteCY * s('shotcretePerCY') });
-  lines.push({ cat: 'Shell', item: 'Detail & Strip Forms', cost: s('detailForms') });
-  if (s('wateringLabor') > 0) lines.push({ cat: 'Shell', item: 'Watering Labor', cost: s('wateringLabor') });
-  lines.push({ cat: 'Shell', item: 'Miracote Densifier', cost: s('miracote') });
+  lines.push({ id: 'shell_rebar', cat: 'Shell', item: 'Steel / Rebar' + (rebarLF > 0 ? ' (' + rebarLF.toLocaleString() + ' lf)' : ''), cost: rebarCost });
+  lines.push({ id: 'shell_shotcrete', cat: 'Shell', item: 'Shotcrete' + (shotcreteCY > 0 ? ' (' + shotcreteCY + ' cy)' : ''), cost: shotcreteCY * s('shotcretePerCY') });
+  lines.push({ id: 'shell_detailforms', cat: 'Shell', item: 'Detail & Strip Forms', cost: s('detailForms') });
+  if (s('wateringLabor') > 0) lines.push({ id: 'shell_watering', cat: 'Shell', item: 'Watering Labor', cost: s('wateringLabor') });
+  lines.push({ id: 'shell_miracote', cat: 'Shell', item: 'Miracote Densifier', cost: s('miracote') });
 
   // 3. Plumbing
-  lines.push({ cat: 'Plumbing', item: 'Underground Plumbing', cost: s('plumbBase') });
+  lines.push({ id: 'plumb_base', cat: 'Plumbing', item: 'Underground Plumbing', cost: s('plumbBase') });
   if (ch('optInFloor')) {
-    lines.push({ cat: 'Plumbing', item: 'In-Floor Cleaning Labor', cost: s('infloorLabor') });
-    lines.push({ cat: 'Plumbing', item: 'IFCS Hardware Kit', cost: s('ifcsKit') });
+    lines.push({ id: 'plumb_infloor', cat: 'Plumbing', item: 'In-Floor Cleaning Labor', cost: s('infloorLabor') });
+    lines.push({ id: 'plumb_ifcs', cat: 'Plumbing', item: 'IFCS Hardware Kit', cost: s('ifcsKit') });
   }
   if (sheerCount > 0) {
-    lines.push({ cat: 'Plumbing', item: 'Sheer Set Labor (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerLabor') });
-    lines.push({ cat: 'Plumbing', item: 'Sheer Fixtures (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerFixture'), marginCat: 'equip' });
+    lines.push({ id: 'plumb_sheerlabor', cat: 'Plumbing', item: 'Sheer Set Labor (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerLabor') });
+    lines.push({ id: 'plumb_sheerfixtures', cat: 'Plumbing', item: 'Sheer Fixtures (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerFixture'), marginCat: 'equip' });
   }
-  lines.push({ cat: 'Plumbing', item: 'Finish Hardware', cost: s('finishHardware') });
+  lines.push({ id: 'plumb_finishhw', cat: 'Plumbing', item: 'Finish Hardware', cost: s('finishHardware') });
 
   // 4. Equipment
   const equipOverride = v('equipmentOverride');
   if (equipOverride > 0) {
-    lines.push({ cat: 'Equipment', item: 'Equipment Package (Heritage Quote)', cost: equipOverride, marginCat: 'equip' });
+    lines.push({ id: 'equip_package', cat: 'Equipment', item: 'Equipment Package (Heritage Quote)', cost: equipOverride, marginCat: 'equip' });
   } else {
-    lines.push({ cat: 'Equipment', item: 'Main Pump (3HP VS)', cost: s('mainPump'), marginCat: 'equip' });
-    if (ch('optWaterFeature')) lines.push({ cat: 'Equipment', item: 'Feature Pump (1.5HP)', cost: s('featurePump'), marginCat: 'equip' });
-    lines.push({ cat: 'Equipment', item: 'Filter (Cartridge)', cost: s('filter'), marginCat: 'equip' });
+    lines.push({ id: 'equip_mainpump', cat: 'Equipment', item: 'Main Pump (3HP VS)', cost: s('mainPump'), marginCat: 'equip' });
+    if (ch('optWaterFeature')) lines.push({ id: 'equip_featurepump', cat: 'Equipment', item: 'Feature Pump (1.5HP)', cost: s('featurePump'), marginCat: 'equip' });
+    lines.push({ id: 'equip_filter', cat: 'Equipment', item: 'Filter (Cartridge)', cost: s('filter'), marginCat: 'equip' });
     if (spaActive) {
-      lines.push({ cat: 'Equipment', item: 'Heater (400k BTU)', cost: s('heater'), marginCat: 'equip' });
+      lines.push({ id: 'equip_heater', cat: 'Equipment', item: 'Heater (400k BTU)', cost: s('heater'), marginCat: 'equip' });
     }
-    if (ch('optSalt')) lines.push({ cat: 'Equipment', item: 'Salt Chlorinator', cost: s('saltCell'), marginCat: 'equip' });
-    if (ch('optAutomation')) lines.push({ cat: 'Equipment', item: 'Automation / IntelliCenter', cost: s('automation'), marginCat: 'equip' });
-    if (valveCount > 0) lines.push({ cat: 'Equipment', item: '3-Way Valves/Actuators (\u00d7' + valveCount + ')', cost: valveCount * s('valve'), marginCat: 'equip' });
-    if (valve2wayCount > 0) lines.push({ cat: 'Equipment', item: '2-Way Valves (\u00d7' + valve2wayCount + ')', cost: valve2wayCount * s('valve2way'), marginCat: 'equip' });
+    if (ch('optSalt')) lines.push({ id: 'equip_salt', cat: 'Equipment', item: 'Salt Chlorinator', cost: s('saltCell'), marginCat: 'equip' });
+    if (ch('optAutomation')) lines.push({ id: 'equip_automation', cat: 'Equipment', item: 'Automation / IntelliCenter', cost: s('automation'), marginCat: 'equip' });
+    if (valveCount > 0) lines.push({ id: 'equip_valve3way', cat: 'Equipment', item: '3-Way Valves/Actuators (\u00d7' + valveCount + ')', cost: valveCount * s('valve'), marginCat: 'equip' });
+    if (valve2wayCount > 0) lines.push({ id: 'equip_valve2way', cat: 'Equipment', item: '2-Way Valves (\u00d7' + valve2wayCount + ')', cost: valve2wayCount * s('valve2way'), marginCat: 'equip' });
   }
   if (lightCount > 0) {
-    lines.push({ cat: 'Equipment', item: 'MicroBrite Lights (\u00d7' + lightCount + ')', cost: lightCount * s('lightEach'), marginCat: 'equip' });
-    lines.push({ cat: 'Equipment', item: 'Transformer', cost: s('transformer'), marginCat: 'equip' });
+    lines.push({ id: 'equip_lights', cat: 'Equipment', item: 'MicroBrite Lights (\u00d7' + lightCount + ')', cost: lightCount * s('lightEach'), marginCat: 'equip' });
+    lines.push({ id: 'equip_transformer', cat: 'Equipment', item: 'Transformer', cost: s('transformer'), marginCat: 'equip' });
   }
-  lines.push({ cat: 'Equipment', item: 'Electrical Labor', cost: s('electricalLabor') });
-  if (spaActive) lines.push({ cat: 'Equipment', item: 'Gas Line Sub', cost: s('gasLine') });
-  if (conduitFt > 0) lines.push({ cat: 'Equipment', item: 'Conduit/Wire (' + Math.round(conduitFt) + ' ft)', cost: conduitFt * s('conduitPerFt') });
+  lines.push({ id: 'equip_electrical', cat: 'Equipment', item: 'Electrical Labor', cost: s('electricalLabor') });
+  if (spaActive) lines.push({ id: 'equip_gasline', cat: 'Equipment', item: 'Gas Line Sub', cost: s('gasLine') });
+  if (conduitFt > 0) lines.push({ id: 'equip_conduit', cat: 'Equipment', item: 'Conduit/Wire (' + Math.round(conduitFt) + ' ft)', cost: conduitFt * s('conduitPerFt') });
 
   // 5. Tile & Coping
-  lines.push({ cat: 'Tile/Coping', item: 'Basecrete Waterproofing', cost: s('basecrete') });
+  lines.push({ id: 'tile_basecrete', cat: 'Tile/Coping', item: 'Basecrete Waterproofing', cost: s('basecrete') });
 
   // Waterline tile: auto-calc LF from pool perimeter + dam walls (internal spa + cover vault)
   let waterlineLF = perimeter;
   if (spa === 'internal' && damWallLen > 0) waterlineLF += damWallLen;
   if (vaultLen > 0) waterlineLF += vaultLen;
   if (waterlineLF > 0) {
-    lines.push({ cat: 'Tile/Coping', item: 'Waterline Tile Material (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileMat'), marginCat: 'tile' });
-    lines.push({ cat: 'Tile/Coping', item: 'Waterline Tile Labor (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileLabor') });
+    lines.push({ id: 'tile_waterline_mat', cat: 'Tile/Coping', item: 'Waterline Tile Material (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileMat'), marginCat: 'tile' });
+    lines.push({ id: 'tile_waterline_labor', cat: 'Tile/Coping', item: 'Waterline Tile Labor (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileLabor') });
   }
 
   // Other tile (sqft): dam wall face, spillover
@@ -1107,8 +1130,8 @@ function recalc() {
   }
   if (otherTileSqft > 0) {
     const otherTileDesc = ' (' + otherTileParts.join(' + ') + ' = ' + otherTileSqft + ' sqft)';
-    lines.push({ cat: 'Tile/Coping', item: 'Other Tile Material' + otherTileDesc, cost: otherTileSqft * s('otherTileMat'), marginCat: 'tile' });
-    lines.push({ cat: 'Tile/Coping', item: 'Other Tile Labor' + otherTileDesc, cost: otherTileSqft * s('otherTileLabor') });
+    lines.push({ id: 'tile_other_mat', cat: 'Tile/Coping', item: 'Other Tile Material' + otherTileDesc, cost: otherTileSqft * s('otherTileMat'), marginCat: 'tile' });
+    lines.push({ id: 'tile_other_labor', cat: 'Tile/Coping', item: 'Other Tile Labor' + otherTileDesc, cost: otherTileSqft * s('otherTileLabor') });
   }
 
   // Veneer (sqft): raised spa, planter, etc.
@@ -1125,8 +1148,8 @@ function recalc() {
   }
   if (veneerSqft > 0) {
     const veneerDesc = ' (' + veneerParts.join(' + ') + ' = ' + veneerSqft + ' sqft)';
-    lines.push({ cat: 'Tile/Coping', item: 'Veneer Material' + veneerDesc, cost: veneerSqft * s('veneerMat'), marginCat: 'tile' });
-    lines.push({ cat: 'Tile/Coping', item: 'Veneer Installation' + veneerDesc, cost: veneerSqft * s('veneerLabor') });
+    lines.push({ id: 'tile_veneer_mat', cat: 'Tile/Coping', item: 'Veneer Material' + veneerDesc, cost: veneerSqft * s('veneerMat'), marginCat: 'tile' });
+    lines.push({ id: 'tile_veneer_labor', cat: 'Tile/Coping', item: 'Veneer Installation' + veneerDesc, cost: veneerSqft * s('veneerLabor') });
   }
 
   // Coping: pool + spa + vault (3 exposed sides) − spillover deduction
@@ -1144,33 +1167,33 @@ function recalc() {
     copingLabel = parts.length > 1 ? ' (' + parts.join(' + ') + ' = ' + copingPerimeter + ' lf)' : ' (' + copingPerimeter + ' lf)';
   }
   if (copingType === 'pourinplace') {
-    lines.push({ cat: 'Tile/Coping', item: 'Coping — Pour-in-Place' + copingLabel, cost: copingPerimeter * s('copingPIP') });
+    lines.push({ id: 'tile_coping_pip', cat: 'Tile/Coping', item: 'Coping — Pour-in-Place' + copingLabel, cost: copingPerimeter * s('copingPIP') });
   } else if (copingType === 'stone' || copingType === 'paver') {
     const stoneMatLF = v('copingStoneLF') || s('copingStoneMat');
-    lines.push({ cat: 'Tile/Coping', item: 'Coping Material' + copingLabel, cost: copingPerimeter * stoneMatLF, marginCat: 'tile' });
-    lines.push({ cat: 'Tile/Coping', item: 'Coping Install Labor' + copingLabel, cost: copingPerimeter * s('copingStoneLabor') });
+    lines.push({ id: 'tile_coping_mat', cat: 'Tile/Coping', item: 'Coping Material' + copingLabel, cost: copingPerimeter * stoneMatLF, marginCat: 'tile' });
+    lines.push({ id: 'tile_coping_labor', cat: 'Tile/Coping', item: 'Coping Install Labor' + copingLabel, cost: copingPerimeter * s('copingStoneLabor') });
   }
 
   // 6. Decking
   const deckType = document.getElementById('deckingType').value;
   const deckSqft = v('deckSqft');
   if (deckType === 'concrete' && deckSqft > 0) {
-    lines.push({ cat: 'Decking', item: 'Concrete Decking (' + deckSqft + ' sqft)', cost: deckSqft * s('deckConcrete') });
+    lines.push({ id: 'deck_concrete', cat: 'Decking', item: 'Concrete Decking (' + deckSqft + ' sqft)', cost: deckSqft * s('deckConcrete') });
   } else if (deckType === 'pavers' && deckSqft > 0) {
-    lines.push({ cat: 'Decking', item: 'Paver Decking (' + deckSqft + ' sqft)', cost: deckSqft * s('deckPaver') });
+    lines.push({ id: 'deck_pavers', cat: 'Decking', item: 'Paver Decking (' + deckSqft + ' sqft)', cost: deckSqft * s('deckPaver') });
   } else if (deckType === 'flagstone' && deckSqft > 0) {
-    lines.push({ cat: 'Decking', item: 'Flagstone Pavers (' + deckSqft + ' sqft)', cost: deckSqft * s('deckFlagstone') });
+    lines.push({ id: 'deck_flagstone', cat: 'Decking', item: 'Flagstone Pavers (' + deckSqft + ' sqft)', cost: deckSqft * s('deckFlagstone') });
   }
 
   // 7. Auto Cover
   if (ch('optAutoCover')) {
-    lines.push({ cat: 'Auto Cover', item: 'Automatic Cover (Cover Care)', cost: s('autoCover'), marginCat: 'equip' });
+    lines.push({ id: 'cover_autocover', cat: 'Auto Cover', item: 'Automatic Cover (Cover Care)', cost: s('autoCover'), marginCat: 'equip' });
     if (vaultLen > 0) {
       if (vaultLidType === 'pourinplace') {
-        lines.push({ cat: 'Auto Cover', item: 'Vault Lid — Pour-in-Place (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidPIP') });
+        lines.push({ id: 'cover_lid_pip', cat: 'Auto Cover', item: 'Vault Lid — Pour-in-Place (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidPIP') });
       } else if (vaultLidType === 'stone') {
-        lines.push({ cat: 'Auto Cover', item: 'Vault Lid — Stone Material (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidStoneMat'), marginCat: 'tile' });
-        lines.push({ cat: 'Auto Cover', item: 'Vault Lid — Stone Install (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidStoneLabor') });
+        lines.push({ id: 'cover_lid_stone_mat', cat: 'Auto Cover', item: 'Vault Lid — Stone Material (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidStoneMat'), marginCat: 'tile' });
+        lines.push({ id: 'cover_lid_stone_labor', cat: 'Auto Cover', item: 'Vault Lid — Stone Install (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidStoneLabor') });
       }
     }
   }
@@ -1178,23 +1201,23 @@ function recalc() {
   // 8. Interior — based on pool + spa perimeter LF, with depth surcharge over 6'
   const interiorLF = perimeter + allSpaPerim;
   if (interiorLF > 0) {
-    lines.push({ cat: 'Interior', item: 'Interior Finish (' + interiorLF + ' lf)', cost: interiorLF * s('interiorPerLF') });
+    lines.push({ id: 'interior_finish', cat: 'Interior', item: 'Interior Finish (' + interiorLF + ' lf)', cost: interiorLF * s('interiorPerLF') });
   }
   const deepFt = Math.max(0, (v('depthDeep') || 0) - 6);
   if (deepFt > 0) {
-    lines.push({ cat: 'Interior', item: 'Depth Surcharge (' + deepFt + ' ft over 6\')', cost: deepFt * s('interiorDepthSurcharge') });
+    lines.push({ id: 'interior_depth', cat: 'Interior', item: 'Depth Surcharge (' + deepFt + ' ft over 6\')', cost: deepFt * s('interiorDepthSurcharge') });
   }
 
   // 9. Boulders
-  if (ch('optBoulders')) lines.push({ cat: 'Other', item: 'Integrated Boulder Package', cost: s('boulders') });
+  if (ch('optBoulders')) lines.push({ id: 'other_boulders', cat: 'Other', item: 'Integrated Boulder Package', cost: s('boulders') });
 
   // Raised Wall
   if (ch('optWaterFeature') && parseInt(document.getElementById('raisedWall').value) === 1) {
-    lines.push({ cat: 'Other', item: 'Raised Wall (Structural + Veneer)', cost: s('raisedWall') });
+    lines.push({ id: 'other_raisedwall', cat: 'Other', item: 'Raised Wall (Structural + Veneer)', cost: s('raisedWall') });
   }
 
   // 10. Startup
-  lines.push({ cat: 'Prep/Startup', item: 'Startup & Pool Prep', cost: s('startup') });
+  lines.push({ id: 'startup_prep', cat: 'Prep/Startup', item: 'Startup & Pool Prep', cost: s('startup') });
 
   // ---- Calculate totals with margin ----
   const globalMargin = v('marginSlider') / 100;
@@ -1209,14 +1232,16 @@ function recalc() {
   const catOrder = ['Site Prep', 'Shell', 'Plumbing', 'Equipment', 'Tile/Coping', 'Decking', 'Auto Cover', 'Interior', 'Other', 'Prep/Startup'];
 
   lines.forEach(line => {
-    const cost = Math.round(line.cost || 0);
+    const calcCost = Math.round(line.cost || 0);
+    const hasOverride = line.id && window.costOverrides.hasOwnProperty(line.id);
+    const cost = hasOverride ? Math.round(window.costOverrides[line.id]) : calcCost;
     let margin = globalMargin;
     if (line.marginCat === 'equip') margin = equipMargin;
     if (line.marginCat === 'tile') margin = tileMargin;
     const price = margin < 1 ? Math.round(cost / (1 - margin)) : cost;
 
     if (!cats[line.cat]) cats[line.cat] = { lines: [], costTotal: 0, priceTotal: 0 };
-    cats[line.cat].lines.push({ ...line, cost, price });
+    cats[line.cat].lines.push({ ...line, cost, calcCost, price, hasOverride });
     cats[line.cat].costTotal += cost;
     cats[line.cat].priceTotal += price;
     totalCost += cost;
@@ -1232,7 +1257,12 @@ function recalc() {
     html += '<div class="cost-section-title"><span class="cat-name">' + cat + '</span><span class="section-total">$' + c.costTotal.toLocaleString() + '</span><span class="section-total" style="color:var(--gold-dark)">$' + c.priceTotal.toLocaleString() + '</span></div>';
     c.lines.forEach(l => {
       const zeroClass = l.cost === 0 ? ' zero' : '';
-      html += '<div class="cost-line"><span class="item-name">' + l.item + '</span><span class="item-cost' + zeroClass + '">$' + l.cost.toLocaleString() + '</span><span class="item-price' + zeroClass + '">$' + l.price.toLocaleString() + '</span></div>';
+      const overClass = l.hasOverride ? ' overridden' : '';
+      const costVal = l.hasOverride ? l.cost : '';
+      const costDisplay = l.cost.toLocaleString();
+      html += '<div class="cost-line"><span class="item-name">' + l.item + '</span>';
+      html += '<span class="item-cost' + zeroClass + overClass + '"><input type="number" class="cost-override-input" value="' + (l.hasOverride ? l.cost : '') + '" placeholder="$' + l.calcCost.toLocaleString() + '" data-line-id="' + (l.id || '') + '" onchange="setCostOverride(this.dataset.lineId, this.value)" title="' + (l.hasOverride ? 'Overridden (was $' + l.calcCost.toLocaleString() + '). Clear to reset.' : 'Type a value to override for this quote') + '"></span>';
+      html += '<span class="item-price' + zeroClass + '">$' + l.price.toLocaleString() + '</span></div>';
     });
     html += '</div>';
   });
@@ -1640,6 +1670,10 @@ function getQuoteData() {
   ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft','planterSqft','vaultLength','vaultWidth','vaultLidType'].forEach(id => {
     data.options[id] = document.getElementById(id)?.value || '';
   });
+  // Save per-quote cost overrides
+  if (Object.keys(window.costOverrides).length > 0) {
+    data.costOverrides = { ...window.costOverrides };
+  }
   return data;
 }
 
@@ -1686,6 +1720,8 @@ function loadQuoteData(data) {
   }
   if (data.margin) document.getElementById('marginSlider').value = data.margin;
   if (data.equipmentOverride) document.getElementById('equipmentOverride').value = data.equipmentOverride;
+  // Restore per-quote cost overrides
+  window.costOverrides = data.costOverrides ? { ...data.costOverrides } : {};
   updateMargin();
   recalc();
 }
@@ -1720,6 +1756,7 @@ function saveQuote() {
 function newQuote() {
   if (document.getElementById('clientName').value && !confirm('Start a new quote? Unsaved changes will be lost.')) return;
   currentQuote = null;
+  window.costOverrides = {};
   // Clear all fields
   document.querySelectorAll('#tab-quote input[type=text], #tab-quote input[type=number], #tab-quote input[type=date]').forEach(el => el.value = '');
   document.querySelectorAll('#tab-quote input[type=checkbox]').forEach(el => el.checked = false);
