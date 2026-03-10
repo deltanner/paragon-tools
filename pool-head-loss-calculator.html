@@ -22,7 +22,7 @@
 
   // ── Password Gate ──
   // SHA-256 hash of the password so it's not plaintext in source
-  const PASS_HASH = '90e41de7b39f0e4e8928d048da6bdf5af498ae41948be1ea84e56f2bbfee2048';
+  const PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
   async function sha256(str) {
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
     return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
