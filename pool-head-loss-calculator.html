@@ -4,6 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Paragon Pools — Head Loss Calculator</title>
+<!-- Firebase SDK (compat mode for simple script-tag usage) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyA-Ung2jK8ALtMIfvU2zHhm5kAVl460An4",
+    authDomain: "toolsbyparagon.firebaseapp.com",
+    databaseURL: "https://toolsbyparagon-default-rtdb.firebaseio.com",
+    projectId: "toolsbyparagon",
+    storageBucket: "toolsbyparagon.firebasestorage.app",
+    messagingSenderId: "204324649539",
+    appId: "1:204324649539:web:35c834ad63c90a5292b2f6"
+  });
+  const fbDb = firebase.database();
+</script>
 <style>
   :root {
     --gold: #CC9933;
@@ -847,16 +862,43 @@ function renderResults(allResults, overallTDH, totalGPM) {
 }
 
 // ==========================================
-// SAVE / LOAD / LIBRARY (localStorage)
+// SAVE / LOAD / LIBRARY (Firebase Realtime DB)
 // ==========================================
-const STORAGE_KEY = 'paragon_pool_library';
+const FB_PATH = 'pool_library';
+let _libraryCache = [];      // local mirror of cloud data
+let _firebaseReady = false;
+
+// Listen for real-time changes from Firebase
+fbDb.ref(FB_PATH).on('value', snap => {
+  _libraryCache = snap.val() || [];
+  _firebaseReady = true;
+  updateSyncBadge('synced');
+});
 
 function getLibrary() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch { return []; }
+  return JSON.parse(JSON.stringify(_libraryCache)); // deep clone
 }
 function setLibrary(lib) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(lib));
+  _libraryCache = lib;
+  updateSyncBadge('saving');
+  fbDb.ref(FB_PATH).set(lib)
+    .then(() => updateSyncBadge('synced'))
+    .catch(err => { console.error('Firebase save error:', err); updateSyncBadge('error'); });
+}
+
+// Sync status badge next to the Save button
+function updateSyncBadge(state) {
+  let badge = document.getElementById('syncBadge');
+  if (!badge) {
+    badge = document.createElement('span');
+    badge.id = 'syncBadge';
+    badge.style.cssText = 'font-size:11px;margin-left:8px;padding:2px 8px;border-radius:10px;vertical-align:middle;font-weight:500;';
+    const saveBtn = document.querySelector('.bar-btn.save');
+    if (saveBtn && saveBtn.parentNode) saveBtn.parentNode.insertBefore(badge, saveBtn.nextSibling);
+  }
+  if (state === 'synced')  { badge.textContent = '☁ Cloud'; badge.style.background = '#e6f4ea'; badge.style.color = '#1e8e3e'; }
+  else if (state === 'saving') { badge.textContent = '⟳ Saving…'; badge.style.background = '#fef3e6'; badge.style.color = '#e8710a'; }
+  else if (state === 'error')  { badge.textContent = '⚠ Offline'; badge.style.background = '#fce8e6'; badge.style.color = '#d93025'; }
 }
 
 function gatherState() {
