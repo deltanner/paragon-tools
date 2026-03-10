@@ -470,6 +470,25 @@
         </div>
         <div class="toggle-switch"><input type="checkbox" id="optAutoCover" onchange="recalc()"><span class="toggle-track"></span></div>
       </div>
+      <div class="conditional-panel" id="cond-autocover">
+        <div class="row">
+          <div class="field"><label>Vault Length (lf)</label><input type="number" id="vaultLength" placeholder="0" oninput="recalc()">
+            <div class="hint">Length of the cover vault (creates dam wall for waterline tile)</div>
+          </div>
+          <div class="field"><label>Vault Width (lf)</label><input type="number" id="vaultWidth" placeholder="0" oninput="recalc()">
+            <div class="hint">Width/depth of the vault housing</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Vault Lid Type</label>
+            <select id="vaultLidType" onchange="recalc()">
+              <option value="pourinplace">Pour-in-Place Concrete</option>
+              <option value="stone">Stone Caps</option>
+            </select>
+            <div class="hint">How the vault opening is covered — adds lid cost + coping around vault</div>
+          </div>
+        </div>
+      </div>
 
       <!-- Coping Type -->
       <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200);">
@@ -746,7 +765,12 @@
       <div class="settings-row"><span class="sr-label">Veneer installation</span><input type="number" id="set_veneerLabor" value="15" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
       <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Coping</span></div>
       <div class="settings-row"><span class="sr-label">Pour-in-place coping</span><input type="number" id="set_copingPIP" value="22" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Stone/paver coping material</span><input type="number" id="set_copingStoneMat" value="25" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
       <div class="settings-row"><span class="sr-label">Stone/paver coping install</span><input type="number" id="set_copingStoneLabor" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Cover Vault Lid</span></div>
+      <div class="settings-row"><span class="sr-label">Vault lid — pour-in-place</span><input type="number" id="set_vaultLidPIP" value="22" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Vault lid — stone material</span><input type="number" id="set_vaultLidStoneMat" value="25" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Vault lid — stone install</span><input type="number" id="set_vaultLidStoneLabor" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
     </div>
   </div>
 
@@ -913,6 +937,9 @@ function enforceRules() {
   // Planter conditional panel
   document.getElementById('cond-planter').classList.toggle('visible', ch('optPlanter'));
 
+  // Auto cover vault conditional panel
+  document.getElementById('cond-autocover').classList.toggle('visible', ch('optAutoCover'));
+
   // Water feature conditional panel
   const wfCond = document.getElementById('cond-waterfeature');
   wfCond.classList.toggle('visible', ch('optWaterFeature'));
@@ -964,6 +991,12 @@ function recalc() {
   const spaGal = (spa === 'external_grade' || spa === 'external_raised') ? v('spaGallons') : 0;
   const damWallLen = spa === 'internal' ? v('spaDamWall') : 0;
   const damWallHt = spa === 'internal' ? (v('spaDamHeight') || 2) : 0;
+  // Cover vault dimensions (auto cover)
+  const hasVault = ch('optAutoCover');
+  const vaultLen = hasVault ? v('vaultLength') : 0;
+  const vaultWid = hasVault ? v('vaultWidth') : 0;
+  const vaultLidType = hasVault ? document.getElementById('vaultLidType').value : '';
+
   // Calculate raised spa veneer sqft: (perimeter - shared side) × raised height
   let spaVeneer = 0;
   if (spa === 'external_raised' && spaPerim > 0) {
@@ -1053,6 +1086,7 @@ function recalc() {
   // Waterline tile: auto-calc LF from pool perimeter + dam walls (internal spa + cover vault)
   let waterlineLF = perimeter;
   if (spa === 'internal' && damWallLen > 0) waterlineLF += damWallLen;
+  if (vaultLen > 0) waterlineLF += vaultLen;
   if (waterlineLF > 0) {
     lines.push({ cat: 'Tile/Coping', item: 'Waterline Tile Material (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileMat'), marginCat: 'tile' });
     lines.push({ cat: 'Tile/Coping', item: 'Waterline Tile Labor (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileLabor') });
@@ -1094,24 +1128,25 @@ function recalc() {
     lines.push({ cat: 'Tile/Coping', item: 'Veneer Installation' + veneerDesc, cost: veneerSqft * s('veneerLabor') });
   }
 
-  // Coping
-  const copingPerimeterRaw = perimeter + spaPerim;
+  // Coping: pool + spa + vault (3 exposed sides) − spillover deduction
+  const vaultCopingLF = vaultLen > 0 ? (vaultLen + 2 * vaultWid) : 0;
+  const copingPerimeterRaw = perimeter + spaPerim + vaultCopingLF;
   const copingDeduct = spilloverReducesCoping ? spilloverLen : 0;
   const copingPerimeter = Math.max(0, copingPerimeterRaw - copingDeduct);
   const copingType = document.getElementById('copingType').value;
   let copingLabel = '';
-  if (spaPerim > 0 && copingDeduct > 0) {
-    copingLabel = ' (pool ' + perimeter + ' + spa ' + spaPerim + ' − spillover ' + copingDeduct + ' = ' + copingPerimeter + ' lf)';
-  } else if (spaPerim > 0) {
-    copingLabel = ' (pool ' + perimeter + ' + spa ' + spaPerim + ' = ' + copingPerimeter + ' lf)';
-  } else if (perimeter > 0) {
-    copingLabel = ' (' + perimeter + ' lf)';
+  if (copingPerimeter > 0) {
+    const parts = [perimeter + ' pool'];
+    if (spaPerim > 0) parts.push(spaPerim + ' spa');
+    if (vaultCopingLF > 0) parts.push(vaultCopingLF + ' vault');
+    if (copingDeduct > 0) parts.push('−' + copingDeduct + ' spillover');
+    copingLabel = parts.length > 1 ? ' (' + parts.join(' + ') + ' = ' + copingPerimeter + ' lf)' : ' (' + copingPerimeter + ' lf)';
   }
   if (copingType === 'pourinplace') {
     lines.push({ cat: 'Tile/Coping', item: 'Coping — Pour-in-Place' + copingLabel, cost: copingPerimeter * s('copingPIP') });
   } else if (copingType === 'stone' || copingType === 'paver') {
-    const stoneLF = v('copingStoneLF');
-    lines.push({ cat: 'Tile/Coping', item: 'Coping Material' + copingLabel, cost: copingPerimeter * stoneLF, marginCat: 'tile' });
+    const stoneMatLF = v('copingStoneLF') || s('copingStoneMat');
+    lines.push({ cat: 'Tile/Coping', item: 'Coping Material' + copingLabel, cost: copingPerimeter * stoneMatLF, marginCat: 'tile' });
     lines.push({ cat: 'Tile/Coping', item: 'Coping Install Labor' + copingLabel, cost: copingPerimeter * s('copingStoneLabor') });
   }
 
@@ -1127,7 +1162,17 @@ function recalc() {
   }
 
   // 7. Auto Cover
-  if (ch('optAutoCover')) lines.push({ cat: 'Auto Cover', item: 'Automatic Cover (Cover Care)', cost: s('autoCover'), marginCat: 'equip' });
+  if (ch('optAutoCover')) {
+    lines.push({ cat: 'Auto Cover', item: 'Automatic Cover (Cover Care)', cost: s('autoCover'), marginCat: 'equip' });
+    if (vaultLen > 0) {
+      if (vaultLidType === 'pourinplace') {
+        lines.push({ cat: 'Auto Cover', item: 'Vault Lid — Pour-in-Place (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidPIP') });
+      } else if (vaultLidType === 'stone') {
+        lines.push({ cat: 'Auto Cover', item: 'Vault Lid — Stone Material (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidStoneMat'), marginCat: 'tile' });
+        lines.push({ cat: 'Auto Cover', item: 'Vault Lid — Stone Install (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidStoneLabor') });
+      }
+    }
+  }
 
   // 8. Interior
   if (interiorSqft > 0) {
@@ -1587,7 +1632,7 @@ function getQuoteData() {
   ['optWaterFeature','optSalt','optAutomation','optInFloor','optAutoCover','optPlanter','optBoulders'].forEach(id => {
     data.options[id] = document.getElementById(id)?.checked || false;
   });
-  ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft','planterSqft'].forEach(id => {
+  ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft','planterSqft','vaultLength','vaultWidth','vaultLidType'].forEach(id => {
     data.options[id] = document.getElementById(id)?.value || '';
   });
   return data;
@@ -1629,7 +1674,7 @@ function loadQuoteData(data) {
       const el = document.getElementById(id);
       if (el) el.checked = !!data.options[id];
     });
-    ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft','planterSqft'].forEach(id => {
+    ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft','planterSqft','vaultLength','vaultWidth','vaultLidType'].forEach(id => {
       const el = document.getElementById(id);
       if (el && data.options[id] !== undefined) el.value = data.options[id];
     });
