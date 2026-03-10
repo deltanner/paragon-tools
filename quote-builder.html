@@ -320,6 +320,28 @@
             </div>
             <div class="field"><label>Spa Volume (gallons)</label><input type="number" id="spaGallons" placeholder="0" oninput="recalc()"></div>
           </div>
+          <div class="row" style="margin-top:10px;">
+            <div class="field"><label>Spillover to Pool?</label>
+              <select id="spaSpillover" onchange="recalc()">
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+              <div class="hint">Water spills from spa into pool — replaces coping with tile along that edge</div>
+            </div>
+          </div>
+          <div class="conditional" id="cond-spa-spillover">
+            <div class="row">
+              <div class="field"><label>Spillover Length (lf)</label><input type="number" id="spaSpilloverLen" placeholder="0" oninput="recalc()">
+                <div class="hint">Length of the spillover edge — this stretch loses coping and gets tile instead</div>
+              </div>
+              <div class="field"><label>Spillover Height (ft)</label><input type="number" id="spaSpilloverHt" placeholder="1" step="0.5" oninput="recalc()">
+                <div class="hint">Height of the spillover face to be tiled</div>
+              </div>
+              <div class="field"><label>Spillover Tile Sqft</label><input type="number" id="spaSpilloverSqft" readonly tabindex="-1" style="background:var(--gray-50);color:var(--gray-600)">
+                <div class="hint">Auto-calculated: spillover length × height</div>
+              </div>
+            </div>
+          </div>
         </div>
         <!-- Raised external spa fields -->
         <div class="conditional" id="cond-spa-raised">
@@ -685,6 +707,8 @@
       <div class="settings-row"><span class="sr-label">Dam wall tile labor</span><input type="number" id="set_damWallTileLabor" value="12" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
       <div class="settings-row"><span class="sr-label">Spa veneer material</span><input type="number" id="set_spaVeneerMat" value="22" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
       <div class="settings-row"><span class="sr-label">Spa veneer labor</span><input type="number" id="set_spaVeneerLabor" value="15" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Spillover tile material</span><input type="number" id="set_spilloverTileMat" value="18" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Spillover tile labor</span><input type="number" id="set_spilloverTileLabor" value="12" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
     </div>
   </div>
 
@@ -842,9 +866,11 @@ function enforceRules() {
 
   // Spa conditional panels
   const spa = spaType();
+  const isExternal = spa === 'external_grade' || spa === 'external_raised';
   document.getElementById('cond-spa-internal').classList.toggle('visible', spa === 'internal');
-  document.getElementById('cond-spa-external').classList.toggle('visible', spa === 'external_grade' || spa === 'external_raised');
+  document.getElementById('cond-spa-external').classList.toggle('visible', isExternal);
   document.getElementById('cond-spa-raised').classList.toggle('visible', spa === 'external_raised');
+  document.getElementById('cond-spa-spillover').classList.toggle('visible', isExternal && document.getElementById('spaSpillover').value === 'yes');
 
   // Water feature conditional panel
   const wfCond = document.getElementById('cond-waterfeature');
@@ -904,6 +930,15 @@ function recalc() {
     const sharedSide = v('spaSharedSide') || 0;
     spaVeneer = Math.round(Math.max(0, spaPerim - sharedSide) * raisedHt);
     document.getElementById('spaVeneerSqft').value = spaVeneer > 0 ? spaVeneer : '';
+  }
+
+  // Spillover: reduces coping, adds tile
+  const hasSpillover = (spa === 'external_grade' || spa === 'external_raised') && document.getElementById('spaSpillover').value === 'yes';
+  const spilloverLen = hasSpillover ? v('spaSpilloverLen') : 0;
+  const spilloverHt = hasSpillover ? (v('spaSpilloverHt') || 1) : 0;
+  const spilloverSqft = Math.round(spilloverLen * spilloverHt);
+  if (hasSpillover) {
+    document.getElementById('spaSpilloverSqft').value = spilloverSqft > 0 ? spilloverSqft : '';
   }
 
   // Number of valves needed
@@ -981,16 +1016,30 @@ function recalc() {
     lines.push({ cat: 'Tile/Coping', item: 'Dam Wall Tile Labor (' + damTileSqft + ' sqft)', cost: damTileSqft * s('damWallTileLabor') });
   }
 
-  // Total coping perimeter: pool + spa perimeter for external configs
-  const copingPerimeter = perimeter + spaPerim;
+  // Total coping perimeter: pool + spa perimeter − spillover (spillover replaces coping with tile)
+  const copingPerimeterRaw = perimeter + spaPerim;
+  const copingPerimeter = Math.max(0, copingPerimeterRaw - spilloverLen);
   const copingType = document.getElementById('copingType').value;
-  const copingLabel = spaPerim > 0 ? ' (pool ' + perimeter + ' + spa ' + spaPerim + ' = ' + copingPerimeter + ' lf)' : (perimeter > 0 ? ' (' + perimeter + ' lf)' : '');
+  let copingLabel = '';
+  if (spaPerim > 0 && spilloverLen > 0) {
+    copingLabel = ' (pool ' + perimeter + ' + spa ' + spaPerim + ' − spillover ' + spilloverLen + ' = ' + copingPerimeter + ' lf)';
+  } else if (spaPerim > 0) {
+    copingLabel = ' (pool ' + perimeter + ' + spa ' + spaPerim + ' = ' + copingPerimeter + ' lf)';
+  } else if (perimeter > 0) {
+    copingLabel = ' (' + perimeter + ' lf)';
+  }
   if (copingType === 'pourinplace') {
     lines.push({ cat: 'Tile/Coping', item: 'Coping — Pour-in-Place' + copingLabel, cost: copingPerimeter * s('copingPIP') });
   } else if (copingType === 'stone' || copingType === 'paver') {
     const stoneLF = v('copingStoneLF');
     lines.push({ cat: 'Tile/Coping', item: 'Coping Material' + copingLabel, cost: copingPerimeter * stoneLF, marginCat: 'tile' });
     lines.push({ cat: 'Tile/Coping', item: 'Coping Install Labor' + copingLabel, cost: copingPerimeter * s('copingStoneLabor') });
+  }
+
+  // Spillover tile (where coping is replaced)
+  if (spilloverSqft > 0) {
+    lines.push({ cat: 'Tile/Coping', item: 'Spillover Tile Material (' + spilloverSqft + ' sqft)', cost: spilloverSqft * s('spilloverTileMat'), marginCat: 'tile' });
+    lines.push({ cat: 'Tile/Coping', item: 'Spillover Tile Labor (' + spilloverSqft + ' sqft)', cost: spilloverSqft * s('spilloverTileLabor') });
   }
 
   // Spa veneer for raised external spa
@@ -1112,7 +1161,7 @@ function getQuoteData() {
   // Spa config
   data.spaConfig = document.getElementById('spaConfig').value;
   data.spaDims = {};
-  ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide'].forEach(id => {
+  ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide','spaSpillover','spaSpilloverLen','spaSpilloverHt'].forEach(id => {
     data.spaDims[id] = document.getElementById(id)?.value || '';
   });
   // Gather options
@@ -1150,7 +1199,7 @@ function loadQuoteData(data) {
     document.getElementById('spaConfig').value = 'external_grade';
   }
   if (data.spaDims) {
-    ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide'].forEach(id => {
+    ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaRaisedHeight','spaSharedSide','spaSpillover','spaSpilloverLen','spaSpilloverHt'].forEach(id => {
       const el = document.getElementById(id);
       if (el && data.spaDims[id]) el.value = data.spaDims[id];
     });
