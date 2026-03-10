@@ -683,9 +683,8 @@
     <div class="sc-header"><span class="sc-icon">&#127946;</span><h3>2. Shell</h3></div>
     <div class="sc-body">
       <div class="settings-row"><span class="sr-label">Rebar (per linear foot)</span><input type="number" id="set_rebarPerLF" value="41" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
-      <div class="settings-row"><span class="sr-label">Shotcrete labor</span><input type="number" id="set_shotcretePerCY" value="300" step="5" onchange="saveSettings()"><span class="sr-unit">$/cy</span></div>
+      <div class="settings-row"><span class="sr-label">Shotcrete (labor + material)</span><input type="number" id="set_shotcretePerCY" value="300" step="5" onchange="saveSettings()"><span class="sr-unit">$/cy</span></div>
       <div class="settings-row"><span class="sr-label">Detail &amp; strip forms</span><input type="number" id="set_detailForms" value="1200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Concrete supply</span><input type="number" id="set_concreteSupply" value="0" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
       <div class="settings-row"><span class="sr-label">Watering labor</span><input type="number" id="set_wateringLabor" value="0" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
       <div class="settings-row"><span class="sr-label">Miracote densifier</span><input type="number" id="set_miracote" value="1500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
     </div>
@@ -998,9 +997,8 @@ function recalc() {
   const rebarLF = perimeter + spaPerim;
   const rebarCost = rebarLF * s('rebarPerLF');
   lines.push({ cat: 'Shell', item: 'Steel / Rebar' + (rebarLF > 0 ? ' (' + rebarLF.toLocaleString() + ' lf)' : ''), cost: rebarCost });
-  lines.push({ cat: 'Shell', item: 'Shotcrete Labor' + (shotcreteCY > 0 ? ' (' + shotcreteCY + ' cy)' : ''), cost: shotcreteCY * s('shotcretePerCY') });
+  lines.push({ cat: 'Shell', item: 'Shotcrete' + (shotcreteCY > 0 ? ' (' + shotcreteCY + ' cy)' : ''), cost: shotcreteCY * s('shotcretePerCY') });
   lines.push({ cat: 'Shell', item: 'Detail & Strip Forms', cost: s('detailForms') });
-  if (s('concreteSupply') > 0) lines.push({ cat: 'Shell', item: 'Concrete Supply', cost: s('concreteSupply') });
   if (s('wateringLabor') > 0) lines.push({ cat: 'Shell', item: 'Watering Labor', cost: s('wateringLabor') });
   lines.push({ cat: 'Shell', item: 'Miracote Densifier', cost: s('miracote') });
 
