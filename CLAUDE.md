@@ -1,7 +1,7 @@
 # Paragon Tools — Project Memory
 
 ## Overview
-Internal tools suite for **Paragon Pools** (Las Vegas pool builder). Static HTML/CSS/JS site hosted on GitHub Pages with Firebase Realtime Database for cloud data sync.
+Internal tools suite for **Paragon Pools** (St. George, Utah pool builder). Static HTML/CSS/JS site hosted on GitHub Pages with Firebase Realtime Database for cloud data sync.
 
 ## Live Site
 - **URL**: https://deltanner.github.io/paragon-tools/

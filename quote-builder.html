@@ -276,7 +276,9 @@
     </div>
     <div class="card-body">
       <div class="row">
-        <div class="field"><label>Pool Perimeter (lf)</label><input type="number" id="poolPerimeter" placeholder="0" oninput="recalc()"></div>
+        <div class="field"><label>Pool Perimeter (lf)</label><input type="number" id="poolPerimeter" placeholder="0" oninput="recalc()">
+          <div class="hint">Pool shell perimeter only (exclude spa if external)</div>
+        </div>
         <div class="field"><label>Pool Surface Area (sqft)</label><input type="number" id="poolArea" placeholder="0" oninput="recalc()"></div>
         <div class="field"><label>Pool Volume (gallons)</label><input type="number" id="poolGallons" placeholder="0" oninput="recalc()"></div>
       </div>
@@ -285,7 +287,51 @@
         <div class="field"><label>Deep Depth (ft)</label><input type="number" id="depthDeep" placeholder="5.5" step="0.5" oninput="recalc()"></div>
         <div class="field"><label>Avg Depth (ft)</label><input type="number" id="depthAvg" readonly tabindex="-1" style="background:var(--gray-50);color:var(--gray-600)"></div>
       </div>
-      <div class="row">
+
+      <!-- Spa Configuration -->
+      <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--gray-200);">
+        <div class="row">
+          <div class="field"><label>Spa / Hot Tub</label>
+            <select id="spaConfig" onchange="recalc()">
+              <option value="none">No Spa</option>
+              <option value="internal">Internal (dam wall, inside pool shell)</option>
+              <option value="external_grade">External — On Grade</option>
+              <option value="external_raised">External — Raised</option>
+            </select>
+            <div class="hint">Internal: spa carved into pool shell with dam wall. External: separate spa vessel.</div>
+          </div>
+        </div>
+        <!-- Internal spa fields -->
+        <div class="conditional" id="cond-spa-internal">
+          <div class="row">
+            <div class="field"><label>Dam Wall Length (lf)</label><input type="number" id="spaDamWall" placeholder="0" oninput="recalc()">
+              <div class="hint">Length of the wall separating spa from pool — tile will be calculated for dam wall face</div>
+            </div>
+            <div class="field"><label>Dam Wall Height (ft)</label><input type="number" id="spaDamHeight" placeholder="2" step="0.5" oninput="recalc()">
+              <div class="hint">Height of the dam wall (for tile sqft calculation)</div>
+            </div>
+          </div>
+        </div>
+        <!-- External spa fields -->
+        <div class="conditional" id="cond-spa-external">
+          <div class="row">
+            <div class="field"><label>Spa Perimeter (lf)</label><input type="number" id="spaPerimeter" placeholder="0" oninput="recalc()">
+              <div class="hint">Outer perimeter of the spa — added to coping calculation</div>
+            </div>
+            <div class="field"><label>Spa Volume (gallons)</label><input type="number" id="spaGallons" placeholder="0" oninput="recalc()"></div>
+          </div>
+        </div>
+        <!-- Raised external spa fields -->
+        <div class="conditional" id="cond-spa-raised">
+          <div class="row">
+            <div class="field"><label>Spa Exterior Veneer (sqft)</label><input type="number" id="spaVeneerSqft" placeholder="0" oninput="recalc()">
+              <div class="hint">Exterior vertical surface area of raised spa for stone/tile veneer</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--gray-200);">
         <div class="field"><label>Equipment Pad to Pool (ft)</label><input type="number" id="padDistance" placeholder="0" oninput="recalc()">
           <div class="hint">Distance from equipment pad to nearest pool plumbing connection</div>
         </div>
@@ -306,7 +352,7 @@
         </div>
         <div class="field"><label>Shotcrete (cubic yards)</label><input type="number" id="shotcreteCY" placeholder="0" step="0.5" oninput="recalc()"></div>
         <div class="field"><label>Interior Finish (sqft)</label><input type="number" id="interiorSqft" placeholder="0" oninput="recalc()">
-          <div class="hint">Total interior surface area for plaster/pebble</div>
+          <div class="hint">Total interior surface area for plaster/pebble (include spa interior if applicable)</div>
         </div>
       </div>
     </div>
@@ -320,15 +366,6 @@
       <span class="chevron">&#9660;</span>
     </div>
     <div class="card-body">
-
-      <!-- Spa -->
-      <div class="toggle-row" onclick="toggleSwitch('optSpa')">
-        <div>
-          <div class="toggle-label">Spa / Hot Tub</div>
-          <div class="toggle-sub">Adds heater, 3-way valves, spa plumbing, spa jets</div>
-        </div>
-        <div class="toggle-switch"><input type="checkbox" id="optSpa" onchange="recalc()"><span class="toggle-track"></span></div>
-      </div>
 
       <!-- Water Features -->
       <div class="toggle-row" onclick="toggleSwitch('optWaterFeature')">
@@ -638,6 +675,10 @@
       <div class="settings-row"><span class="sr-label">Stone coping install (sub labor)</span><input type="number" id="set_copingStoneLabor" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
       <div class="settings-row"><span class="sr-label">Planter veneer material</span><input type="number" id="set_planterMat" value="2500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
       <div class="settings-row"><span class="sr-label">Planter veneer labor</span><input type="number" id="set_planterLabor" value="1800" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Dam wall tile material</span><input type="number" id="set_damWallTileMat" value="18" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Dam wall tile labor</span><input type="number" id="set_damWallTileLabor" value="12" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Spa veneer material</span><input type="number" id="set_spaVeneerMat" value="22" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Spa veneer labor</span><input type="number" id="set_spaVeneerLabor" value="15" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
     </div>
   </div>
 
@@ -780,11 +821,24 @@ function ch(id) {
 }
 
 // ---- Business Rules ----
+function hasSpa() {
+  return document.getElementById('spaConfig').value !== 'none';
+}
+function spaType() {
+  return document.getElementById('spaConfig').value; // 'none','internal','external_grade','external_raised'
+}
+
 function enforceRules() {
   // Salt chlorinator requires automation
   if (ch('optSalt') && !ch('optAutomation')) {
     document.getElementById('optAutomation').checked = true;
   }
+
+  // Spa conditional panels
+  const spa = spaType();
+  document.getElementById('cond-spa-internal').classList.toggle('visible', spa === 'internal');
+  document.getElementById('cond-spa-external').classList.toggle('visible', spa === 'external_grade' || spa === 'external_raised');
+  document.getElementById('cond-spa-raised').classList.toggle('visible', spa === 'external_raised');
 
   // Water feature conditional panel
   const wfCond = document.getElementById('cond-waterfeature');
@@ -797,8 +851,6 @@ function enforceRules() {
   // Decking sqft field
   const deckType = document.getElementById('deckingType').value;
   document.getElementById('deckSqftField').style.display = deckType !== 'none' ? '' : 'none';
-
-  // Spa requires heater and gas line — these are reflected in cost calc
 
   // Toggle row active states
   document.querySelectorAll('.toggle-row').forEach(row => {
@@ -832,9 +884,18 @@ function recalc() {
   // Conduit footage: each light needs a home run to pad (approx) + shared trench
   const conduitFt = lightCount > 0 ? (padDist * 2 + lightSideLen) : 0;
 
+  // Spa configuration
+  const spa = spaType();
+  const spaActive = spa !== 'none';
+  const spaPerim = (spa === 'external_grade' || spa === 'external_raised') ? v('spaPerimeter') : 0;
+  const spaGal = (spa === 'external_grade' || spa === 'external_raised') ? v('spaGallons') : 0;
+  const damWallLen = spa === 'internal' ? v('spaDamWall') : 0;
+  const damWallHt = spa === 'internal' ? (v('spaDamHeight') || 2) : 0;
+  const spaVeneer = spa === 'external_raised' ? v('spaVeneerSqft') : 0;
+
   // Number of valves needed
   let valveCount = 0;
-  if (ch('optSpa')) valveCount += 2; // spa supply + return
+  if (spaActive) valveCount += 2; // spa supply + return
   if (ch('optWaterFeature')) valveCount += 1;
   if (ch('optInFloor')) valveCount += 1;
 
@@ -880,7 +941,7 @@ function recalc() {
     lines.push({ cat: 'Equipment', item: 'Main Pump (3HP VS)', cost: s('mainPump'), marginCat: 'equip' });
     if (ch('optWaterFeature')) lines.push({ cat: 'Equipment', item: 'Feature Pump (1.5HP)', cost: s('featurePump'), marginCat: 'equip' });
     lines.push({ cat: 'Equipment', item: 'Filter (Cartridge)', cost: s('filter'), marginCat: 'equip' });
-    if (ch('optSpa')) {
+    if (spaActive) {
       lines.push({ cat: 'Equipment', item: 'Heater (400k BTU)', cost: s('heater'), marginCat: 'equip' });
     }
     if (ch('optSalt')) lines.push({ cat: 'Equipment', item: 'Salt Chlorinator', cost: s('saltCell'), marginCat: 'equip' });
@@ -892,7 +953,7 @@ function recalc() {
     lines.push({ cat: 'Equipment', item: 'Transformer', cost: s('transformer'), marginCat: 'equip' });
   }
   lines.push({ cat: 'Equipment', item: 'Electrical Labor', cost: s('electricalLabor') });
-  if (ch('optSpa')) lines.push({ cat: 'Equipment', item: 'Gas Line Sub', cost: s('gasLine') });
+  if (spaActive) lines.push({ cat: 'Equipment', item: 'Gas Line Sub', cost: s('gasLine') });
   if (conduitFt > 0) lines.push({ cat: 'Equipment', item: 'Conduit/Wire (' + Math.round(conduitFt) + ' ft)', cost: conduitFt * s('conduitPerFt') });
 
   // 5. Tile & Coping
@@ -900,13 +961,29 @@ function recalc() {
   lines.push({ cat: 'Tile/Coping', item: 'Tile Material', cost: s('tileMat'), marginCat: 'tile' });
   lines.push({ cat: 'Tile/Coping', item: 'Tile Labor', cost: s('tileLabor') });
 
+  // Dam wall tile for internal spa
+  if (spa === 'internal' && damWallLen > 0) {
+    const damTileSqft = Math.round(damWallLen * damWallHt);
+    lines.push({ cat: 'Tile/Coping', item: 'Dam Wall Tile Material (' + damTileSqft + ' sqft)', cost: damTileSqft * s('damWallTileMat'), marginCat: 'tile' });
+    lines.push({ cat: 'Tile/Coping', item: 'Dam Wall Tile Labor (' + damTileSqft + ' sqft)', cost: damTileSqft * s('damWallTileLabor') });
+  }
+
+  // Total coping perimeter: pool + spa perimeter for external configs
+  const copingPerimeter = perimeter + spaPerim;
   const copingType = document.getElementById('copingType').value;
+  const copingLabel = spaPerim > 0 ? ' (pool ' + perimeter + ' + spa ' + spaPerim + ' = ' + copingPerimeter + ' lf)' : (perimeter > 0 ? ' (' + perimeter + ' lf)' : '');
   if (copingType === 'pourinplace') {
-    lines.push({ cat: 'Tile/Coping', item: 'Coping — Pour-in-Place' + (perimeter > 0 ? ' (' + perimeter + ' lf)' : ''), cost: perimeter * s('copingPIP') });
+    lines.push({ cat: 'Tile/Coping', item: 'Coping — Pour-in-Place' + copingLabel, cost: copingPerimeter * s('copingPIP') });
   } else if (copingType === 'stone' || copingType === 'paver') {
     const stoneLF = v('copingStoneLF');
-    lines.push({ cat: 'Tile/Coping', item: 'Coping Material' + (perimeter > 0 ? ' (' + perimeter + ' lf)' : ''), cost: perimeter * stoneLF, marginCat: 'tile' });
-    lines.push({ cat: 'Tile/Coping', item: 'Coping Install Labor' + (perimeter > 0 ? ' (' + perimeter + ' lf)' : ''), cost: perimeter * s('copingStoneLabor') });
+    lines.push({ cat: 'Tile/Coping', item: 'Coping Material' + copingLabel, cost: copingPerimeter * stoneLF, marginCat: 'tile' });
+    lines.push({ cat: 'Tile/Coping', item: 'Coping Install Labor' + copingLabel, cost: copingPerimeter * s('copingStoneLabor') });
+  }
+
+  // Spa veneer for raised external spa
+  if (spa === 'external_raised' && spaVeneer > 0) {
+    lines.push({ cat: 'Tile/Coping', item: 'Spa Veneer Material (' + spaVeneer + ' sqft)', cost: spaVeneer * s('spaVeneerMat'), marginCat: 'tile' });
+    lines.push({ cat: 'Tile/Coping', item: 'Spa Veneer Labor (' + spaVeneer + ' sqft)', cost: spaVeneer * s('spaVeneerLabor') });
   }
 
   if (ch('optPlanter')) {
@@ -1019,8 +1096,14 @@ function getQuoteData() {
   ['poolPerimeter','poolArea','poolGallons','depthShallow','depthDeep','padDistance','lightSide','lightSpacing','steelLbs','shotcreteCY','interiorSqft'].forEach(id => {
     data.dims[id] = document.getElementById(id)?.value || '';
   });
+  // Spa config
+  data.spaConfig = document.getElementById('spaConfig').value;
+  data.spaDims = {};
+  ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaVeneerSqft'].forEach(id => {
+    data.spaDims[id] = document.getElementById(id)?.value || '';
+  });
   // Gather options
-  ['optSpa','optWaterFeature','optSalt','optAutomation','optInFloor','optAutoCover','optPlanter','optBoulders'].forEach(id => {
+  ['optWaterFeature','optSalt','optAutomation','optInFloor','optAutoCover','optPlanter','optBoulders'].forEach(id => {
     data.options[id] = document.getElementById(id)?.checked || false;
   });
   ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft'].forEach(id => {
@@ -1046,9 +1129,22 @@ function loadQuoteData(data) {
       if (el) el.value = data.dims[id];
     });
   }
+  // Spa config
+  if (data.spaConfig) {
+    document.getElementById('spaConfig').value = data.spaConfig;
+  } else if (data.options && data.options.optSpa) {
+    // Legacy: old saved quotes had optSpa boolean — map to external_grade
+    document.getElementById('spaConfig').value = 'external_grade';
+  }
+  if (data.spaDims) {
+    ['spaDamWall','spaDamHeight','spaPerimeter','spaGallons','spaVeneerSqft'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && data.spaDims[id]) el.value = data.spaDims[id];
+    });
+  }
   // Options
   if (data.options) {
-    ['optSpa','optWaterFeature','optSalt','optAutomation','optInFloor','optAutoCover','optPlanter','optBoulders'].forEach(id => {
+    ['optWaterFeature','optSalt','optAutomation','optInFloor','optAutoCover','optPlanter','optBoulders'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.checked = !!data.options[id];
     });
