@@ -13,6 +13,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <title>Paragon Pools — Quote Builder</title>
+<!-- PDF.js for takeoff import -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -92,6 +94,14 @@
   .card-header h2 { font-size: 15px; font-weight: 600; color: var(--gray-800); flex: 1; }
   .card-header .num { background: var(--gold); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
   .card-header .chevron { font-size: 18px; color: var(--gray-600); transition: transform 0.2s; }
+  .import-btn { background: var(--gold); color: white; border: none; padding: 5px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .import-btn:hover { background: var(--gold-dark); }
+  .import-result { margin: 12px 0; padding: 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+  .import-result.error { background: #fef2f2; border-color: #fca5a5; }
+  .import-result .ir-title { font-weight: 700; margin-bottom: 6px; color: var(--gray-800); }
+  .import-result .ir-field { display: flex; justify-content: space-between; padding: 2px 0; }
+  .import-result .ir-field .ir-label { color: var(--gray-600); }
+  .import-result .ir-field .ir-value { font-weight: 600; color: var(--gray-800); }
   .card-header.collapsed .chevron { transform: rotate(-90deg); }
   .card-body { padding: 20px; }
   .card-body.collapsed { display: none; }
@@ -272,9 +282,12 @@
     <div class="card-header" onclick="toggleCard(this)">
       <span class="num">1</span>
       <h2>Pool Dimensions &amp; Site</h2>
+      <button class="import-btn" onclick="event.stopPropagation(); document.getElementById('takeoffFile').click();" title="Import from VIP3D takeoff PDF">&#128196; Import Takeoff</button>
+      <input type="file" id="takeoffFile" accept=".pdf" style="display:none" onchange="importTakeoff(this)">
       <span class="chevron">&#9660;</span>
     </div>
     <div class="card-body">
+      <div id="importResult"></div>
       <div class="row">
         <div class="field"><label>Pool Perimeter (lf)</label><input type="number" id="poolPerimeter" placeholder="0" oninput="recalc()">
           <div class="hint">Pool shell perimeter only (exclude spa if external)</div>
@@ -1135,6 +1148,360 @@ function recalc() {
 function updateMargin() {
   const val = document.getElementById('marginSlider').value;
   document.getElementById('marginDisplay').textContent = val + '%';
+  recalc();
+}
+
+// ---- VIP3D Takeoff Import ----
+async function importTakeoff(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = ''; // reset so same file can be re-imported
+
+  const resultDiv = document.getElementById('importResult');
+  resultDiv.innerHTML = '<div class="import-result"><div class="ir-title">Importing takeoff\u2026</div></div>';
+
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    // Extract text from all pages
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const strings = content.items.map(item => item.str);
+      fullText += strings.join(' ') + '\n';
+    }
+
+    // Parse the takeoff text
+    const data = parseTakeoff(fullText);
+    applyTakeoffData(data);
+
+    // Show import summary
+    let html = '<div class="import-result"><div class="ir-title">\u2705 Imported from: ' + file.name + '</div>';
+    const fields = data._summary || [];
+    fields.forEach(f => {
+      html += '<div class="ir-field"><span class="ir-label">' + f.label + '</span><span class="ir-value">' + f.value + '</span></div>';
+    });
+    if (fields.length === 0) html += '<div style="color:#b45309;">No recognizable VIP3D data found in this PDF.</div>';
+    html += '</div>';
+    resultDiv.innerHTML = html;
+
+  } catch (err) {
+    resultDiv.innerHTML = '<div class="import-result error"><div class="ir-title">\u274c Import failed</div>' + err.message + '</div>';
+  }
+}
+
+function parseFeetInches(s) {
+  // "148' 1\"" → 148.08, "36'" → 36, "6239' 9\"" → 6239.75
+  if (!s) return 0;
+  s = s.trim();
+  const m = s.match(/^([\d,]+)'\s*(\d+)?"?/);
+  if (m) {
+    const ft = parseFloat(m[1].replace(/,/g, ''));
+    const inch = m[2] ? parseFloat(m[2]) : 0;
+    return Math.round((ft + inch / 12) * 100) / 100;
+  }
+  // Plain number
+  const n = parseFloat(s.replace(/,/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+
+function parseNumber(s) {
+  if (!s) return 0;
+  return parseFloat(s.replace(/,/g, '').trim()) || 0;
+}
+
+function parseTakeoff(text) {
+  const data = { _summary: [] };
+
+  // Split into sections by looking for section headers
+  // VIP3D sections: Pools, Spas, Hardscapes, Water Features, Electrical, Project Info, etc.
+
+  // Helper: extract value after a key, stopping at the next key or newline context
+  function extract(pattern, txt) {
+    const m = (txt || text).match(pattern);
+    return m ? m[1].trim() : null;
+  }
+
+  // Isolate the Pools section (from "Pools" to the next major section)
+  const poolMatch = text.match(/Pools\s([\s\S]*?)(?=\bSpas\b|\bHardscapes\b|\bWater Features\b|\bElectrical\b|\bProject Info\b|\bStaircases\b|\bPlanters\b|$)/);
+  const poolText = poolMatch ? poolMatch[1] : text;
+
+  // Isolate Spas section
+  const spaMatch = text.match(/Spas\s([\s\S]*?)(?=\bHardscapes\b|\bWater Features\b|\bElectrical\b|\bProject Info\b|\bStaircases\b|\bPlanters\b|$)/);
+  const spaText = spaMatch ? spaMatch[1] : '';
+
+  // Isolate Project Info section
+  const projMatch = text.match(/Project Info\s([\s\S]*?)(?=\bElectrical\b|\bStaircases\b|$)/);
+  const projText = projMatch ? projMatch[1] : '';
+
+  // Isolate Water Features section
+  const wfMatch = text.match(/Water Features\s([\s\S]*?)(?=\bElectrical\b|\bProject Info\b|\bStaircases\b|\bPlanters\b|$)/);
+  const wfText = wfMatch ? wfMatch[1] : '';
+
+  // --- Pool data ---
+  const poolPerim = extract(/Perimeter:\s*([\d,]+'\s*\d*"?)/, poolText);
+  if (poolPerim) {
+    data.poolPerimeter = parseFeetInches(poolPerim);
+    data._summary.push({ label: 'Pool Perimeter', value: poolPerim + ' \u2192 ' + data.poolPerimeter + ' lf' });
+  }
+
+  const poolArea = extract(/Area:\s*([\d,.]+)\s*ft/, poolText);
+  if (poolArea) {
+    data.poolArea = parseNumber(poolArea);
+    data._summary.push({ label: 'Pool Area', value: poolArea + ' ft\u00b2' });
+  }
+
+  const poolGallons = extract(/Water Volume:\s*([\d,]+)\s*gallons/, poolText);
+  if (poolGallons) {
+    data.poolGallons = parseNumber(poolGallons);
+    data._summary.push({ label: 'Water Volume', value: poolGallons + ' gal' });
+  }
+
+  // Depth: "3' to 4' 6\"" or "8' to 6' 4\" to 2' 11\""
+  // VIP3D lists depth transitions. Parse all values, min = shallow, max = deep.
+  const depthRaw = extract(/Depth:\s*(.+?)(?=\s*Water Volume|\s*Total|\s*Height|\s*$)/, poolText);
+  if (depthRaw) {
+    const depthValues = [];
+    // Split on "to" and parse each segment
+    depthRaw.split(/\s+to\s+/).forEach(function(seg) {
+      const val = parseFeetInches(seg.trim());
+      if (val > 0) depthValues.push(val);
+    });
+    if (depthValues.length >= 2) {
+      data.depthShallow = Math.min.apply(null, depthValues);
+      data.depthDeep = Math.max.apply(null, depthValues);
+      data._summary.push({ label: 'Depth', value: data.depthShallow + "' shallow \u2192 " + data.depthDeep + "' deep" });
+    } else if (depthValues.length === 1) {
+      data.depthDeep = depthValues[0];
+      data._summary.push({ label: 'Depth', value: depthValues[0] + "'" });
+    }
+  }
+
+  // Pool concrete is the value right before Rebar (column layout can mix in Hardscape concrete)
+  const concreteMatch = poolText.match(/Concrete:\s*([\d,.]+)\s*yards[\s\S]*?Rebar:/);
+  const concreteCY = concreteMatch ? concreteMatch[1] : extract(/Concrete:\s*([\d,.]+)\s*yards/, poolText);
+  if (concreteCY) {
+    data.shotcreteCY = parseNumber(concreteCY);
+    data._summary.push({ label: 'Concrete', value: concreteCY + ' yards\u00b3' });
+  }
+
+  const rebar = extract(/Rebar:\s*([\d,]+'\s*\d*"?)/, poolText);
+  if (rebar) {
+    data.rebarFt = parseFeetInches(rebar);
+    // Convert linear feet of rebar to approximate lbs (typically ~0.67 lbs/ft for #4 rebar)
+    data.steelLbs = Math.round(data.rebarFt * 0.67);
+    data._summary.push({ label: 'Rebar', value: rebar + ' \u2192 ~' + data.steelLbs + ' lbs' });
+  }
+
+  const intSqft = extract(/Int Surface Area:\s*([\d,.]+)\s*ft/, poolText);
+  if (intSqft) {
+    data.interiorSqft = parseNumber(intSqft);
+    data._summary.push({ label: 'Interior Surface', value: intSqft + ' ft\u00b2' });
+  }
+
+  const lights = extract(/Lights:\s*(\d+)/, poolText);
+  if (lights) {
+    data.poolLights = parseInt(lights);
+    data._summary.push({ label: 'Pool Lights', value: lights });
+  }
+
+  const copingLF = extract(/Coping Interior:\s*([\d,]+'\s*\d*"?)/, poolText);
+  if (copingLF) {
+    data.copingLF = parseFeetInches(copingLF);
+    data._summary.push({ label: 'Coping', value: copingLF });
+  }
+
+  const copingMat = extract(/Coping Material:\s*(.+?)(?=\s*Tile Line|\s*$)/, poolText);
+  if (copingMat) {
+    data.copingMaterial = copingMat;
+    data._summary.push({ label: 'Coping Material', value: copingMat });
+  }
+
+  // Spillover from pool section
+  const poolSpillover = extract(/Spillover Length\(s\):\s*(.+?)(?=\s*Spillover Material|\s*Steps|\s*$)/, poolText);
+  if (poolSpillover) {
+    data.poolSpillover = poolSpillover;
+    data._summary.push({ label: 'Pool Spillover', value: poolSpillover });
+  }
+
+  // --- Spa data ---
+  const spaCount = extract(/Count:\s*(\d+)/, spaText);
+  if (spaCount && parseInt(spaCount) > 0) {
+    data.hasSpa = true;
+    data._summary.push({ label: 'Spa', value: 'Yes (' + spaCount + ')' });
+
+    const spaPerim = extract(/Perimeter:\s*([\d,]+'\s*\d*"?)/, spaText);
+    if (spaPerim) {
+      data.spaPerimeter = parseFeetInches(spaPerim);
+      data._summary.push({ label: 'Spa Perimeter', value: spaPerim + ' \u2192 ' + data.spaPerimeter + ' lf' });
+    }
+
+    const spaGal = extract(/Water Volume:\s*([\d,]+)\s*gallons/, spaText);
+    if (spaGal) {
+      data.spaGallons = parseNumber(spaGal);
+      data._summary.push({ label: 'Spa Volume', value: spaGal + ' gal' });
+    }
+
+    // Dam wall indicates internal spa
+    const damWall = extract(/Dam Wall:\s*(.+?)(?=\s*Spillover|\s*Steps|\s*Lights|\s*$)/, spaText);
+    if (damWall) {
+      data.spaType = 'internal';
+      // Parse dam wall length from the longest segment, e.g. "+12\" 13'" → 13'
+      const damSegments = damWall.match(/\+\d+"?\s*([\d'"\s]+)/g) || [];
+      let maxLen = 0;
+      let totalLen = 0;
+      damSegments.forEach(seg => {
+        const lenMatch = seg.match(/([\d]+'\s*\d*"?)\s*$/);
+        if (lenMatch) {
+          const l = parseFeetInches(lenMatch[1]);
+          totalLen += l;
+          if (l > maxLen) maxLen = l;
+        }
+      });
+      data.damWallLen = totalLen;
+      data._summary.push({ label: 'Dam Wall (internal spa)', value: damWall + ' \u2192 ' + totalLen + ' lf total' });
+    } else {
+      // No dam wall = external spa. Check for height to determine raised.
+      const spaHeight = extract(/Height:\s*(.+?)(?=\s*Depth|\s*$)/, spaText);
+      if (spaHeight) {
+        const ht = parseFeetInches(spaHeight);
+        data.spaType = ht > 0 ? 'external_raised' : 'external_grade';
+        data._summary.push({ label: 'Spa Type', value: ht > 0 ? 'External Raised (' + spaHeight + ')' : 'External On Grade' });
+      } else {
+        data.spaType = 'external_grade';
+        data._summary.push({ label: 'Spa Type', value: 'External (no dam wall found)' });
+      }
+    }
+
+    // Spa spillover
+    const spaSpillover = extract(/Spillover Length\(s\):\s*(.+?)(?=\s*Spillover Material|\s*Steps|\s*$)/, spaText);
+    if (spaSpillover) {
+      // Sum all spillover lengths: "6\", 6\"" or "22'" or "2x1', 1' 6\""
+      let totalSpillover = 0;
+      const parts = spaSpillover.split(',');
+      parts.forEach(part => {
+        part = part.trim();
+        const multMatch = part.match(/^(\d+)x(.*)/);
+        if (multMatch) {
+          totalSpillover += parseInt(multMatch[1]) * parseFeetInches(multMatch[2]);
+        } else {
+          // Handle inches-only like '6"'
+          const inchOnly = part.match(/^(\d+)"$/);
+          if (inchOnly) {
+            totalSpillover += parseInt(inchOnly[1]) / 12;
+          } else {
+            totalSpillover += parseFeetInches(part);
+          }
+        }
+      });
+      data.spaSpilloverLen = Math.round(totalSpillover * 100) / 100;
+      data._summary.push({ label: 'Spa Spillover', value: spaSpillover + ' \u2192 ' + data.spaSpilloverLen + ' lf total' });
+    }
+
+    const spaLights = extract(/Lights:\s*(\d+)/, spaText);
+    if (spaLights) {
+      data.spaLights = parseInt(spaLights);
+      data._summary.push({ label: 'Spa Lights', value: spaLights });
+    }
+  }
+
+  // --- Water Features ---
+  const wfDescent = extract(/Water Descent:\s*(.+?)(?=\s*Aerators|\s*$)/, wfText);
+  const wfRain = extract(/Rain Descent:\s*(.+?)(?=\s*Water Descent|\s*Aerators|\s*$)/, wfText);
+  const bubblers = extract(/Bubblers:\s*(\d+)/, wfText);
+  const deckJets = extract(/Deck Jets:\s*(\d+)/, wfText);
+  if (wfDescent || wfRain) {
+    data.hasWaterFeature = true;
+    // Count sheer descents
+    let sheerCount = 0;
+    if (wfDescent) {
+      const parts = wfDescent.split(',');
+      parts.forEach(p => {
+        const multMatch = p.trim().match(/^(\d+)x/);
+        sheerCount += multMatch ? parseInt(multMatch[1]) : 1;
+      });
+    }
+    if (wfRain) {
+      const parts = wfRain.split(',');
+      parts.forEach(p => {
+        const multMatch = p.trim().match(/^(\d+)x/);
+        sheerCount += multMatch ? parseInt(multMatch[1]) : 1;
+      });
+    }
+    data.sheerCount = sheerCount;
+    data._summary.push({ label: 'Water Features', value: (wfDescent || '') + (wfRain ? ' + rain: ' + wfRain : '') + ' \u2192 ' + sheerCount + ' descents' });
+  }
+  if (bubblers && parseInt(bubblers) > 0) {
+    data._summary.push({ label: 'Bubblers', value: bubblers });
+  }
+
+  // --- Project Info ---
+  const projName = extract(/Project Name:\s*(.+?)(?=\s*Client|\s*$)/, projText);
+  if (projName) { data.projectName = projName; data._summary.push({ label: 'Project', value: projName }); }
+  const clientName = extract(/Client Name:\s*(.+?)(?=\s*Address|\s*$)/, projText);
+  if (clientName) { data.clientName = clientName; data._summary.push({ label: 'Client', value: clientName }); }
+  const address = extract(/Address:\s*(.+?)(?=\s*City|\s*$)/, projText);
+  if (address) { data.address = address; data._summary.push({ label: 'Address', value: address }); }
+  const city = extract(/City:\s*(.+?)(?=\s*State|\s*$)/, projText);
+  if (city) { data.city = city; data._summary.push({ label: 'City', value: city }); }
+
+  return data;
+}
+
+function applyTakeoffData(data) {
+  // Pool dimensions
+  if (data.poolPerimeter) document.getElementById('poolPerimeter').value = Math.round(data.poolPerimeter);
+  if (data.poolArea) document.getElementById('poolArea').value = Math.round(data.poolArea);
+  if (data.poolGallons) document.getElementById('poolGallons').value = Math.round(data.poolGallons);
+  if (data.depthShallow) document.getElementById('depthShallow').value = data.depthShallow;
+  if (data.depthDeep) document.getElementById('depthDeep').value = data.depthDeep;
+  if (data.shotcreteCY) document.getElementById('shotcreteCY').value = data.shotcreteCY;
+  if (data.steelLbs) document.getElementById('steelLbs').value = data.steelLbs;
+  if (data.interiorSqft) document.getElementById('interiorSqft').value = Math.round(data.interiorSqft);
+
+  // Spa configuration
+  if (data.hasSpa) {
+    const spaConfig = document.getElementById('spaConfig');
+    if (data.spaType === 'internal') {
+      spaConfig.value = 'internal';
+      if (data.damWallLen) document.getElementById('spaDamWall').value = Math.round(data.damWallLen);
+    } else if (data.spaType === 'external_raised') {
+      spaConfig.value = 'external_raised';
+      if (data.spaPerimeter) document.getElementById('spaPerimeter').value = Math.round(data.spaPerimeter);
+      if (data.spaGallons) document.getElementById('spaGallons').value = Math.round(data.spaGallons);
+    } else {
+      spaConfig.value = 'external_grade';
+      if (data.spaPerimeter) document.getElementById('spaPerimeter').value = Math.round(data.spaPerimeter);
+      if (data.spaGallons) document.getElementById('spaGallons').value = Math.round(data.spaGallons);
+    }
+
+    // Spillover
+    if (data.spaSpilloverLen && data.spaSpilloverLen > 0) {
+      document.getElementById('spaSpillover').value = 'open'; // default to open, user can change
+      document.getElementById('spaSpilloverLen').value = Math.round(data.spaSpilloverLen * 10) / 10;
+    }
+  }
+
+  // Water features
+  if (data.hasWaterFeature) {
+    document.getElementById('optWaterFeature').checked = true;
+    if (data.sheerCount) document.getElementById('sheerCount').value = data.sheerCount;
+  }
+
+  // Project info
+  if (data.clientName) document.getElementById('clientName').value = data.clientName;
+  if (data.address) document.getElementById('projectAddress').value = data.address;
+  if (data.city) {
+    // Try to match to our city dropdown
+    const cityLower = data.city.toLowerCase().replace(/[\s.]/g, '');
+    const cityMap = { 'stgeorge': 'stgeorge', 'saintgeorge': 'stgeorge', 'washington': 'washington', 'hurricane': 'hurricane', 'ivins': 'ivins', 'santaclara': 'santaclara', 'leeds': 'leeds', 'laverkin': 'laverkin' };
+    const mapped = cityMap[cityLower];
+    if (mapped) document.getElementById('projectCity').value = mapped;
+  }
+
   recalc();
 }
 
