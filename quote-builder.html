@@ -509,9 +509,16 @@
       <div class="toggle-row" onclick="toggleSwitch('optPlanter')">
         <div>
           <div class="toggle-label">Raised Planter Bed</div>
-          <div class="toggle-sub">Stone veneer planter — material + labor</div>
+          <div class="toggle-sub">Veneer planter — uses veneer $/sqft rates</div>
         </div>
         <div class="toggle-switch"><input type="checkbox" id="optPlanter" onchange="recalc()"><span class="toggle-track"></span></div>
+      </div>
+      <div class="conditional-panel" id="cond-planter">
+        <div class="row">
+          <div class="field"><label>Planter Veneer (sqft)</label><input type="number" id="planterSqft" placeholder="0" oninput="recalc()">
+            <div class="hint">Total square footage of veneer on planter faces</div>
+          </div>
+        </div>
       </div>
 
       <!-- Boulders -->
@@ -728,18 +735,18 @@
     <div class="sc-header"><span class="sc-icon">&#9638;</span><h3>5. Tile &amp; Coping</h3></div>
     <div class="sc-body">
       <div class="settings-row"><span class="sr-label">Basecrete waterproofing</span><input type="number" id="set_basecrete" value="1800" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Tile material</span><input type="number" id="set_tileMat" value="1500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Tile labor</span><input type="number" id="set_tileLabor" value="1600" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Waterline Tile</span></div>
+      <div class="settings-row"><span class="sr-label">Waterline tile material</span><input type="number" id="set_waterlineTileMat" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Waterline tile labor</span><input type="number" id="set_waterlineTileLabor" value="14" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Other Tile (dam wall, spillover, etc.)</span></div>
+      <div class="settings-row"><span class="sr-label">Other tile material</span><input type="number" id="set_otherTileMat" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Other tile labor</span><input type="number" id="set_otherTileLabor" value="12" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Veneer (spa, planter, stone, etc.)</span></div>
+      <div class="settings-row"><span class="sr-label">Veneer material</span><input type="number" id="set_veneerMat" value="22" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Veneer installation</span><input type="number" id="set_veneerLabor" value="15" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Coping</span></div>
       <div class="settings-row"><span class="sr-label">Pour-in-place coping</span><input type="number" id="set_copingPIP" value="22" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
-      <div class="settings-row"><span class="sr-label">Stone coping install (sub labor)</span><input type="number" id="set_copingStoneLabor" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
-      <div class="settings-row"><span class="sr-label">Planter veneer material</span><input type="number" id="set_planterMat" value="2500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Planter veneer labor</span><input type="number" id="set_planterLabor" value="1800" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Dam wall tile material</span><input type="number" id="set_damWallTileMat" value="18" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
-      <div class="settings-row"><span class="sr-label">Dam wall tile labor</span><input type="number" id="set_damWallTileLabor" value="12" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
-      <div class="settings-row"><span class="sr-label">Spa veneer material</span><input type="number" id="set_spaVeneerMat" value="22" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
-      <div class="settings-row"><span class="sr-label">Spa veneer labor</span><input type="number" id="set_spaVeneerLabor" value="15" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
-      <div class="settings-row"><span class="sr-label">Spillover tile material</span><input type="number" id="set_spilloverTileMat" value="18" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
-      <div class="settings-row"><span class="sr-label">Spillover tile labor</span><input type="number" id="set_spilloverTileLabor" value="12" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Stone/paver coping install</span><input type="number" id="set_copingStoneLabor" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
     </div>
   </div>
 
@@ -903,6 +910,9 @@ function enforceRules() {
   document.getElementById('cond-spa-raised').classList.toggle('visible', spa === 'external_raised');
   document.getElementById('cond-spa-spillover').classList.toggle('visible', isExternal && document.getElementById('spaSpillover').value !== 'none');
 
+  // Planter conditional panel
+  document.getElementById('cond-planter').classList.toggle('visible', ch('optPlanter'));
+
   // Water feature conditional panel
   const wfCond = document.getElementById('cond-waterfeature');
   wfCond.classList.toggle('visible', ch('optWaterFeature'));
@@ -1039,17 +1049,52 @@ function recalc() {
 
   // 5. Tile & Coping
   lines.push({ cat: 'Tile/Coping', item: 'Basecrete Waterproofing', cost: s('basecrete') });
-  lines.push({ cat: 'Tile/Coping', item: 'Tile Material', cost: s('tileMat'), marginCat: 'tile' });
-  lines.push({ cat: 'Tile/Coping', item: 'Tile Labor', cost: s('tileLabor') });
 
-  // Dam wall tile for internal spa
-  if (spa === 'internal' && damWallLen > 0) {
-    const damTileSqft = Math.round(damWallLen * damWallHt);
-    lines.push({ cat: 'Tile/Coping', item: 'Dam Wall Tile Material (' + damTileSqft + ' sqft)', cost: damTileSqft * s('damWallTileMat'), marginCat: 'tile' });
-    lines.push({ cat: 'Tile/Coping', item: 'Dam Wall Tile Labor (' + damTileSqft + ' sqft)', cost: damTileSqft * s('damWallTileLabor') });
+  // Waterline tile: auto-calc LF from pool perimeter + dam walls (internal spa + cover vault)
+  let waterlineLF = perimeter;
+  if (spa === 'internal' && damWallLen > 0) waterlineLF += damWallLen;
+  if (waterlineLF > 0) {
+    lines.push({ cat: 'Tile/Coping', item: 'Waterline Tile Material (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileMat'), marginCat: 'tile' });
+    lines.push({ cat: 'Tile/Coping', item: 'Waterline Tile Labor (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileLabor') });
   }
 
-  // Total coping perimeter: pool + spa − spillover (only if open; covered keeps coping)
+  // Other tile (sqft): dam wall face, spillover
+  let otherTileSqft = 0;
+  const otherTileParts = [];
+  if (spa === 'internal' && damWallLen > 0) {
+    const damTileSqft = Math.round(damWallLen * damWallHt);
+    otherTileSqft += damTileSqft;
+    otherTileParts.push('dam wall ' + damTileSqft);
+  }
+  if (spilloverSqft > 0) {
+    otherTileSqft += spilloverSqft;
+    otherTileParts.push('spillover ' + spilloverSqft);
+  }
+  if (otherTileSqft > 0) {
+    const otherTileDesc = ' (' + otherTileParts.join(' + ') + ' = ' + otherTileSqft + ' sqft)';
+    lines.push({ cat: 'Tile/Coping', item: 'Other Tile Material' + otherTileDesc, cost: otherTileSqft * s('otherTileMat'), marginCat: 'tile' });
+    lines.push({ cat: 'Tile/Coping', item: 'Other Tile Labor' + otherTileDesc, cost: otherTileSqft * s('otherTileLabor') });
+  }
+
+  // Veneer (sqft): raised spa, planter, etc.
+  let veneerSqft = 0;
+  const veneerParts = [];
+  if (spa === 'external_raised' && spaVeneer > 0) {
+    veneerSqft += spaVeneer;
+    veneerParts.push('spa ' + spaVeneer);
+  }
+  if (ch('optPlanter') && v('planterSqft') > 0) {
+    const pSqft = v('planterSqft');
+    veneerSqft += pSqft;
+    veneerParts.push('planter ' + pSqft);
+  }
+  if (veneerSqft > 0) {
+    const veneerDesc = ' (' + veneerParts.join(' + ') + ' = ' + veneerSqft + ' sqft)';
+    lines.push({ cat: 'Tile/Coping', item: 'Veneer Material' + veneerDesc, cost: veneerSqft * s('veneerMat'), marginCat: 'tile' });
+    lines.push({ cat: 'Tile/Coping', item: 'Veneer Installation' + veneerDesc, cost: veneerSqft * s('veneerLabor') });
+  }
+
+  // Coping
   const copingPerimeterRaw = perimeter + spaPerim;
   const copingDeduct = spilloverReducesCoping ? spilloverLen : 0;
   const copingPerimeter = Math.max(0, copingPerimeterRaw - copingDeduct);
@@ -1068,23 +1113,6 @@ function recalc() {
     const stoneLF = v('copingStoneLF');
     lines.push({ cat: 'Tile/Coping', item: 'Coping Material' + copingLabel, cost: copingPerimeter * stoneLF, marginCat: 'tile' });
     lines.push({ cat: 'Tile/Coping', item: 'Coping Install Labor' + copingLabel, cost: copingPerimeter * s('copingStoneLabor') });
-  }
-
-  // Spillover tile (where coping is replaced)
-  if (spilloverSqft > 0) {
-    lines.push({ cat: 'Tile/Coping', item: 'Spillover Tile Material (' + spilloverSqft + ' sqft)', cost: spilloverSqft * s('spilloverTileMat'), marginCat: 'tile' });
-    lines.push({ cat: 'Tile/Coping', item: 'Spillover Tile Labor (' + spilloverSqft + ' sqft)', cost: spilloverSqft * s('spilloverTileLabor') });
-  }
-
-  // Spa veneer for raised external spa
-  if (spa === 'external_raised' && spaVeneer > 0) {
-    lines.push({ cat: 'Tile/Coping', item: 'Spa Veneer Material (' + spaVeneer + ' sqft)', cost: spaVeneer * s('spaVeneerMat'), marginCat: 'tile' });
-    lines.push({ cat: 'Tile/Coping', item: 'Spa Veneer Labor (' + spaVeneer + ' sqft)', cost: spaVeneer * s('spaVeneerLabor') });
-  }
-
-  if (ch('optPlanter')) {
-    lines.push({ cat: 'Tile/Coping', item: 'Planter Veneer (Material)', cost: s('planterMat'), marginCat: 'tile' });
-    lines.push({ cat: 'Tile/Coping', item: 'Planter Veneer (Labor)', cost: s('planterLabor') });
   }
 
   // 6. Decking
@@ -1559,7 +1587,7 @@ function getQuoteData() {
   ['optWaterFeature','optSalt','optAutomation','optInFloor','optAutoCover','optPlanter','optBoulders'].forEach(id => {
     data.options[id] = document.getElementById(id)?.checked || false;
   });
-  ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft'].forEach(id => {
+  ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft','planterSqft'].forEach(id => {
     data.options[id] = document.getElementById(id)?.value || '';
   });
   return data;
@@ -1601,7 +1629,7 @@ function loadQuoteData(data) {
       const el = document.getElementById(id);
       if (el) el.checked = !!data.options[id];
     });
-    ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft'].forEach(id => {
+    ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft','planterSqft'].forEach(id => {
       const el = document.getElementById(id);
       if (el && data.options[id] !== undefined) el.value = data.options[id];
     });
