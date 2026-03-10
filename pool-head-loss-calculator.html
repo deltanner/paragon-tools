@@ -297,7 +297,7 @@
     <div class="card-header" onclick="document.getElementById('filterBody').classList.toggle('cost-hidden');this.querySelector('.chev').classList.toggle('cost-chev-closed')" style="cursor:pointer;background:var(--gold-light);">
       <span class="num" style="background:var(--gold);">&#9881;</span>
       <h2>Filter &amp; Pump Sizing</h2>
-      <span class="chev" style="margin-left:auto;font-size:18px;color:var(--gray-600);transition:transform .2s;">&#9660;</span>
+      <span class="chev cost-chev-closed" style="margin-left:auto;font-size:18px;color:var(--gray-600);transition:transform .2s;">&#9660;</span>
     </div>
     <div class="card-body" id="filterBody">
 
@@ -381,9 +381,9 @@
     <div class="card-header" onclick="document.getElementById('costBody').classList.toggle('cost-hidden');this.querySelector('.chev').classList.toggle('cost-chev-closed')" style="cursor:pointer;background:var(--gold-light);">
       <span class="num" style="background:var(--gold);">$</span>
       <h2>Plumbing Cost Estimator</h2>
-      <span class="chev" style="margin-left:auto;font-size:18px;color:var(--gray-600);transition:transform .2s;">&#9660;</span>
+      <span class="chev cost-chev-closed" style="margin-left:auto;font-size:18px;color:var(--gray-600);transition:transform .2s;">&#9660;</span>
     </div>
-    <div class="card-body" id="costBody">
+    <div class="card-body cost-hidden" id="costBody">
 
       <div style="background:var(--gold-lighter);border-left:4px solid var(--gold);padding:10px 14px;border-radius:0 6px 6px 0;font-size:13px;margin-bottom:20px;">
         Pricing from your plumbing sub's price list. Pipe footage auto-reads from your circuits above. Adjust quantities and add extras below.
