@@ -140,16 +140,23 @@
   /* === SIDE PANEL === */
   .side-heading { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-600); margin-bottom: 12px; }
   .cost-section { margin-bottom: 16px; }
-  .cost-section-title { font-size: 12px; font-weight: 600; color: var(--gold-dark); text-transform: uppercase; letter-spacing: 0.8px; padding: 6px 0; border-bottom: 1px solid var(--gray-200); margin-bottom: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-  .cost-section-title .section-total { font-size: 13px; color: var(--gray-800); font-weight: 700; }
-  .cost-line { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; }
-  .cost-line .item-name { color: var(--gray-600); }
-  .cost-line .item-cost { color: var(--gray-800); font-weight: 500; font-variant-numeric: tabular-nums; }
-  .cost-line .item-cost.zero { color: var(--gray-300); }
+  .cost-section-title { font-size: 12px; font-weight: 600; color: var(--gold-dark); text-transform: uppercase; letter-spacing: 0.8px; padding: 6px 0; border-bottom: 1px solid var(--gray-200); margin-bottom: 6px; cursor: pointer; display: flex; align-items: center; }
+  .cost-section-title .cat-name { flex: 1; }
+  .cost-section-title .section-total { font-size: 13px; color: var(--gray-800); font-weight: 700; width: 80px; text-align: right; }
+  .cost-line { display: flex; align-items: center; padding: 4px 0; font-size: 13px; }
+  .cost-line .item-name { flex: 1; color: var(--gray-600); }
+  .cost-line .item-cost { color: var(--gray-800); font-weight: 500; font-variant-numeric: tabular-nums; width: 80px; text-align: right; }
+  .cost-line .item-price { color: var(--gold-dark); font-weight: 500; font-variant-numeric: tabular-nums; width: 80px; text-align: right; }
+  .cost-line .item-cost.zero, .cost-line .item-price.zero { color: var(--gray-300); }
   .cost-divider { border-top: 2px solid var(--gray-800); margin: 10px 0 8px; }
-  .cost-total-line { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 14px; font-weight: 700; }
-  .cost-total-line .total-label { color: var(--gray-800); }
-  .cost-total-line .total-value { color: var(--gold-dark); font-size: 16px; }
+  .cost-total-line { display: flex; align-items: center; padding: 6px 0; font-size: 14px; font-weight: 700; }
+  .cost-total-line .total-label { flex: 1; color: var(--gray-800); }
+  .cost-total-line .total-value { width: 80px; text-align: right; font-size: 15px; }
+  .cost-total-line .total-value.cost-col { color: var(--gray-800); }
+  .cost-total-line .total-value.price-col { color: var(--gold-dark); }
+  .cost-col-header { display: flex; align-items: center; padding: 2px 0 6px; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; color: var(--gray-400); border-bottom: 1px solid var(--gray-200); margin-bottom: 10px; }
+  .cost-col-header span:first-child { flex: 1; }
+  .cost-col-header span { width: 80px; text-align: right; }
 
   /* Margin slider area */
   .margin-box { background: var(--charcoal); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
@@ -623,6 +630,7 @@
   </div>
 
   <div class="side-heading">Cost Breakdown</div>
+  <div class="cost-col-header"><span>Item</span><span>My Cost</span><span>Bill Rate</span></div>
 
   <div id="costBreakdown">
     <!-- Populated by JS -->
@@ -630,15 +638,11 @@
 
   <div class="cost-divider"></div>
   <div class="cost-total-line">
-    <span class="total-label">TOTAL COST</span>
-    <span class="total-value" id="totalCost">$0</span>
+    <span class="total-label">TOTALS</span>
+    <span class="total-value cost-col" id="totalCost">$0</span>
+    <span class="total-value price-col" id="totalPrice">$0</span>
   </div>
-
-  <div class="price-box">
-    <div class="price-label">Customer Price</div>
-    <div class="price-value" id="totalPrice">$0</div>
-    <div class="price-sub">at <span id="priceMarginNote">30%</span> margin</div>
-  </div>
+  <div style="text-align:right;font-size:11px;color:var(--gray-400);margin-top:2px;">at <span id="priceMarginNote">30%</span> margin</div>
 
 </div>
 </div>
@@ -1225,10 +1229,10 @@ function recalc() {
     if (!cats[cat]) return;
     const c = cats[cat];
     html += '<div class="cost-section">';
-    html += '<div class="cost-section-title"><span>' + cat + '</span><span class="section-total">$' + c.costTotal.toLocaleString() + '</span></div>';
+    html += '<div class="cost-section-title"><span class="cat-name">' + cat + '</span><span class="section-total">$' + c.costTotal.toLocaleString() + '</span><span class="section-total" style="color:var(--gold-dark)">$' + c.priceTotal.toLocaleString() + '</span></div>';
     c.lines.forEach(l => {
       const zeroClass = l.cost === 0 ? ' zero' : '';
-      html += '<div class="cost-line"><span class="item-name">' + l.item + '</span><span class="item-cost' + zeroClass + '">$' + l.cost.toLocaleString() + '</span></div>';
+      html += '<div class="cost-line"><span class="item-name">' + l.item + '</span><span class="item-cost' + zeroClass + '">$' + l.cost.toLocaleString() + '</span><span class="item-price' + zeroClass + '">$' + l.price.toLocaleString() + '</span></div>';
     });
     html += '</div>';
   });
