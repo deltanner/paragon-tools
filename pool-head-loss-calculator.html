@@ -19,7 +19,50 @@
     appId: "1:204324649539:web:35c834ad63c90a5292b2f6"
   });
   const fbDb = firebase.database();
+
+  // ── Password Gate ──
+  // SHA-256 hash of the password so it's not plaintext in source
+  const PASS_HASH = '90e41de7b39f0e4e8928d048da6bdf5af498ae41948be1ea84e56f2bbfee2048';
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  async function checkGate() {
+    const saved = sessionStorage.getItem('pp_auth');
+    if (saved === PASS_HASH) { unlockApp(); return; }
+    document.getElementById('gateOverlay').style.display = 'flex';
+  }
+  async function tryPassword() {
+    const inp = document.getElementById('gateInput');
+    const hash = await sha256(inp.value.trim());
+    if (hash === PASS_HASH) {
+      sessionStorage.setItem('pp_auth', PASS_HASH);
+      unlockApp();
+    } else {
+      const err = document.getElementById('gateError');
+      err.style.display = 'block';
+      inp.value = '';
+      inp.focus();
+      setTimeout(() => err.style.display = 'none', 2000);
+    }
+  }
+  function unlockApp() {
+    document.getElementById('gateOverlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
 </script>
+<style>
+  /* ── Password Gate Styles ── */
+  #gateOverlay{display:none;position:fixed;inset:0;z-index:99999;background:#1a1a1a;align-items:center;justify-content:center;flex-direction:column;gap:20px}
+  #gateOverlay .gate-box{background:#2d2d2d;border:1px solid #CC9933;border-radius:12px;padding:40px 36px;text-align:center;max-width:360px;width:90%}
+  #gateOverlay h2{color:#CC9933;font-size:20px;margin-bottom:6px;font-weight:600}
+  #gateOverlay p{color:#999;font-size:13px;margin-bottom:20px}
+  #gateOverlay input{width:100%;padding:12px 14px;border:1px solid #555;border-radius:8px;background:#1a1a1a;color:white;font-size:16px;text-align:center;letter-spacing:2px;outline:none}
+  #gateOverlay input:focus{border-color:#CC9933}
+  #gateOverlay button{margin-top:14px;width:100%;padding:12px;border:none;border-radius:8px;background:#CC9933;color:#1a1a1a;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s}
+  #gateOverlay button:hover{background:#e6ac39}
+  #gateError{display:none;color:#d93025;font-size:13px;margin-top:10px}
+</style>
 <style>
   :root {
     --gold: #CC9933;
@@ -166,7 +209,23 @@
   .cost-chev-closed { transform: rotate(-90deg); }
 </style>
 </head>
-<body>
+<body style="overflow:hidden">
+
+<!-- Password Gate -->
+<div id="gateOverlay">
+  <div class="gate-box">
+    <svg viewBox="120 0 160 135" xmlns="http://www.w3.org/2000/svg" style="height:48px;width:auto;margin-bottom:16px;">
+      <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+      <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+    </svg>
+    <h2>Paragon Tools</h2>
+    <p>Enter the team password to continue</p>
+    <input type="password" id="gateInput" placeholder="Password" onkeydown="if(event.key==='Enter')tryPassword()" autofocus>
+    <button onclick="tryPassword()">Unlock</button>
+    <div id="gateError">Incorrect password. Try again.</div>
+  </div>
+</div>
+<script>checkGate();</script>
 
 <div class="topnav">
   <a class="nav-home" href="index.html">
