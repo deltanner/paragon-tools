@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>
+  (function(){
+    var PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
+    if (sessionStorage.getItem('pp_auth') !== PASS_HASH) {
+      window.location.replace('index.html');
+    }
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Paragon Pools — Quote Builder</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyA-Ung2jK8ALtMIfvU2zHhm5kAVl460An4",
+    authDomain: "toolsbyparagon.firebaseapp.com",
+    databaseURL: "https://toolsbyparagon-default-rtdb.firebaseio.com",
+    projectId: "toolsbyparagon",
+    storageBucket: "toolsbyparagon.firebasestorage.app",
+    messagingSenderId: "204324649539",
+    appId: "1:204324649539:web:35c834ad63c90a5292b2f6"
+  });
+  const fbDb = firebase.database();
+</script>
+<style>
+  :root {
+    --gold: #CC9933;
+    --gold-dark: #a67a2a;
+    --gold-light: #faf3e6;
+    --gold-lighter: #fdf8f0;
+    --black: #1a1a1a;
+    --charcoal: #2d2d2d;
+    --green: #1e8e3e;
+    --green-light: #e6f4ea;
+    --orange: #e8710a;
+    --orange-light: #fef3e6;
+    --red: #d93025;
+    --blue: #1a73e8;
+    --blue-light: #e8f0fe;
+    --gray-50: #f8f9fa;
+    --gray-100: #f1f3f4;
+    --gray-200: #e8eaed;
+    --gray-300: #dadce0;
+    --gray-600: #5f6368;
+    --gray-800: #3c4043;
+    --gray-900: #202124;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 12px rgba(0,0,0,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: var(--gray-100); color: var(--gray-900); line-height: 1.5; }
+
+  /* === TOP NAV === */
+  .topnav { background: var(--black); padding: 10px 32px; display: flex; align-items: center; gap: 16px; border-bottom: 2px solid var(--gold); }
+  .topnav a.nav-home { display: flex; align-items: center; gap: 10px; text-decoration: none; color: white; font-size: 14px; font-weight: 600; letter-spacing: 0.3px; transition: color 0.2s; }
+  .topnav a.nav-home:hover { color: var(--gold); }
+  .topnav .nav-logo { height: 28px; width: auto; }
+  .topnav .nav-sep { color: #555; font-size: 18px; }
+  .topnav .nav-current { color: var(--gold); font-size: 13px; font-weight: 500; }
+
+  /* === HEADER === */
+  .header { background: var(--black); color: white; padding: 20px 32px; display: flex; align-items: center; gap: 20px; }
+  .header-logo { height: 60px; width: auto; }
+  .header-text h1 { font-size: 20px; font-weight: 600; color: white; letter-spacing: 0.5px; }
+  .header-text p { color: var(--gold); font-size: 13px; margin-top: 2px; font-weight: 500; letter-spacing: 0.3px; }
+  .header-divider { width: 1px; height: 50px; background: #444; margin: 0 4px; }
+
+  /* === TAB BAR === */
+  .tab-bar { background: white; border-bottom: 1px solid var(--gray-200); padding: 0 32px; display: flex; gap: 0; box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .tab-btn { padding: 14px 24px; font-size: 14px; font-weight: 500; color: var(--gray-600); cursor: pointer; border: none; background: none; border-bottom: 3px solid transparent; transition: all 0.2s; }
+  .tab-btn:hover { color: var(--gray-900); background: var(--gray-50); }
+  .tab-btn.active { color: var(--gold-dark); border-bottom-color: var(--gold); font-weight: 600; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* === LAYOUT === */
+  .main-layout { display: flex; gap: 0; min-height: calc(100vh - 140px); }
+  .main-panel { flex: 1; padding: 24px 28px; overflow-y: auto; max-height: calc(100vh - 140px); }
+  .side-panel { width: 360px; background: white; border-left: 1px solid var(--gray-200); padding: 20px; overflow-y: auto; max-height: calc(100vh - 140px); flex-shrink: 0; }
+
+  /* === CARDS === */
+  .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
+  .card-header { padding: 14px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; }
+  .card-header:hover { background: var(--gray-50); }
+  .card-header h2 { font-size: 15px; font-weight: 600; color: var(--gray-800); flex: 1; }
+  .card-header .num { background: var(--gold); color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .card-header .chevron { font-size: 18px; color: var(--gray-600); transition: transform 0.2s; }
+  .card-header.collapsed .chevron { transform: rotate(-90deg); }
+  .card-body { padding: 20px; }
+  .card-body.collapsed { display: none; }
+
+  /* === FORM FIELDS === */
+  .row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+  .row:last-child { margin-bottom: 0; }
+  .field { flex: 1; min-width: 160px; }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .field input, .field select, .field textarea { width: 100%; padding: 9px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 14px; font-family: inherit; transition: border 0.2s; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(204,153,51,0.2); }
+  .field .hint { font-size: 11px; color: var(--gray-600); margin-top: 3px; }
+  .field input[type=number] { -moz-appearance: textfield; }
+  .field input::-webkit-outer-spin-button,
+  .field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .field-sm { flex: 0 0 120px; min-width: 120px; }
+  .field-med { flex: 0 0 180px; min-width: 180px; }
+
+  /* === TOGGLE SWITCHES === */
+  .toggle-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; margin-bottom: 10px; cursor: pointer; transition: all 0.15s; }
+  .toggle-row:hover { border-color: var(--gold); background: var(--gold-lighter); }
+  .toggle-row.active { border-color: var(--gold); background: var(--gold-light); }
+  .toggle-row .toggle-label { font-size: 14px; font-weight: 500; flex: 1; }
+  .toggle-row .toggle-sub { font-size: 11px; color: var(--gray-600); margin-top: 2px; }
+  .toggle-switch { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track { position: absolute; cursor: pointer; inset: 0; background: var(--gray-300); border-radius: 24px; transition: background 0.2s; }
+  .toggle-track:before { content: ''; position: absolute; height: 18px; width: 18px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .toggle-switch input:checked + .toggle-track { background: var(--gold); }
+  .toggle-switch input:checked + .toggle-track:before { transform: translateX(20px); }
+
+  /* === CONDITIONAL SECTIONS === */
+  .conditional { display: none; margin-top: 14px; padding: 14px; background: var(--gold-lighter); border: 1px solid #e8d5a8; border-radius: 8px; }
+  .conditional.visible { display: block; }
+
+  /* === SIDE PANEL === */
+  .side-heading { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-600); margin-bottom: 12px; }
+  .cost-section { margin-bottom: 16px; }
+  .cost-section-title { font-size: 12px; font-weight: 600; color: var(--gold-dark); text-transform: uppercase; letter-spacing: 0.8px; padding: 6px 0; border-bottom: 1px solid var(--gray-200); margin-bottom: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+  .cost-section-title .section-total { font-size: 13px; color: var(--gray-800); font-weight: 700; }
+  .cost-line { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; font-size: 13px; }
+  .cost-line .item-name { color: var(--gray-600); }
+  .cost-line .item-cost { color: var(--gray-800); font-weight: 500; font-variant-numeric: tabular-nums; }
+  .cost-line .item-cost.zero { color: var(--gray-300); }
+  .cost-divider { border-top: 2px solid var(--gray-800); margin: 10px 0 8px; }
+  .cost-total-line { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; font-size: 14px; font-weight: 700; }
+  .cost-total-line .total-label { color: var(--gray-800); }
+  .cost-total-line .total-value { color: var(--gold-dark); font-size: 16px; }
+
+  /* Margin slider area */
+  .margin-box { background: var(--charcoal); border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+  .margin-box .margin-title { color: var(--gold); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .margin-box .margin-value { color: white; font-size: 28px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+  .margin-box input[type=range] { width: 100%; accent-color: var(--gold); cursor: pointer; }
+  .margin-box .margin-labels { display: flex; justify-content: space-between; font-size: 10px; color: #888; margin-top: 2px; }
+
+  .price-box { background: var(--gold); border-radius: 8px; padding: 16px; text-align: center; margin-top: 12px; }
+  .price-box .price-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--charcoal); opacity: 0.7; margin-bottom: 4px; }
+  .price-box .price-value { font-size: 32px; font-weight: 800; color: var(--charcoal); }
+  .price-box .price-sub { font-size: 11px; color: var(--charcoal); opacity: 0.6; margin-top: 2px; }
+
+  /* === SETTINGS TAB === */
+  .settings-container { max-width: 900px; margin: 0 auto; padding: 24px 28px; }
+  .settings-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; overflow: hidden; }
+  .settings-card .sc-header { padding: 14px 20px; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; gap: 10px; }
+  .settings-card .sc-header h3 { font-size: 15px; font-weight: 600; color: var(--gray-800); flex: 1; }
+  .settings-card .sc-header .sc-icon { font-size: 18px; }
+  .settings-card .sc-body { padding: 16px 20px; }
+  .settings-row { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row .sr-label { flex: 1; font-size: 13px; color: var(--gray-800); }
+  .settings-row .sr-unit { font-size: 11px; color: var(--gray-600); min-width: 60px; text-align: right; }
+  .settings-row input { width: 110px; padding: 6px 10px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+  .settings-row input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(204,153,51,0.2); }
+  .settings-note { font-size: 11px; color: var(--gray-600); padding: 8px 0 4px; font-style: italic; }
+
+  /* Cloud sync badge */
+  .cloud-badge { font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
+  .cloud-badge.synced { background: var(--green-light); color: var(--green); }
+  .cloud-badge.saving { background: var(--orange-light); color: var(--orange); }
+  .cloud-badge.offline { background: #fce8e6; color: var(--red); }
+
+  /* === SAVED QUOTES TAB === */
+  .saved-container { max-width: 900px; margin: 0 auto; padding: 24px 28px; }
+  .saved-empty { text-align: center; padding: 60px 20px; color: var(--gray-600); }
+  .saved-empty svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.4; }
+  .saved-empty h3 { font-size: 18px; color: var(--gray-800); margin-bottom: 8px; }
+  .saved-list { display: flex; flex-direction: column; gap: 12px; }
+  .saved-item { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 20px; display: flex; align-items: center; gap: 16px; border: 1px solid var(--gray-200); cursor: pointer; transition: all 0.15s; }
+  .saved-item:hover { border-color: var(--gold); box-shadow: var(--shadow-lg); }
+  .saved-item .si-info { flex: 1; }
+  .saved-item .si-name { font-size: 15px; font-weight: 600; color: var(--gray-900); }
+  .saved-item .si-date { font-size: 12px; color: var(--gray-600); margin-top: 2px; }
+  .saved-item .si-price { font-size: 18px; font-weight: 700; color: var(--gold-dark); }
+  .saved-item .si-actions { display: flex; gap: 8px; }
+  .saved-item .si-btn { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid var(--gray-300); background: white; color: var(--gray-600); transition: all 0.15s; }
+  .saved-item .si-btn:hover { border-color: var(--gold); color: var(--gold-dark); }
+  .saved-item .si-btn.delete:hover { border-color: var(--red); color: var(--red); }
+
+  /* === BUTTONS === */
+  .btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+  .btn-gold { background: var(--gold); color: var(--charcoal); }
+  .btn-gold:hover { background: #e6ac39; }
+  .btn-outline { background: white; color: var(--gray-800); border: 1px solid var(--gray-300); }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold-dark); }
+  .btn-sm { padding: 6px 14px; font-size: 12px; }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .main-layout { flex-direction: column; }
+    .side-panel { width: 100%; border-left: none; border-top: 1px solid var(--gray-200); max-height: none; }
+    .main-panel { max-height: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Nav -->
+<nav class="topnav">
+  <a class="nav-home" href="index.html">
+    <svg class="nav-logo" viewBox="120 0 160 135" xmlns="http://www.w3.org/2000/svg">
+      <polygon fill="#CC9933" fill-rule="evenodd" points="274.7,2 127.63,2 136.31,17.04 248.48,16.88 244.72,24.18 193.9,23.97 181.14,46.3 190.71,61.19 202.41,39.92 253.09,39.92"/>
+      <polygon fill="#CC9933" fill-rule="evenodd" points="158.46,24.68 140.74,25.39 201.34,129.23 248.12,49.49 200.99,49.49 191.07,65.79 200.63,81.39 210.91,63.31 221.19,63.31 201.34,98.4"/>
+    </svg>
+    Paragon Tools
+  </a>
+  <span class="nav-sep">/</span>
+  <span class="nav-current">Quote Builder</span>
+  <span style="flex:1"></span>
+  <span class="cloud-badge synced" id="cloudBadge">&#9729; Cloud</span>
+</nav>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('quote')">New Quote</button>
+  <button class="tab-btn" onclick="switchTab('settings')">Unit Costs</button>
+  <button class="tab-btn" onclick="switchTab('saved')">Saved Quotes</button>
+</div>
+
+<!-- ==================== TAB 1: QUOTE BUILDER ==================== -->
+<div class="tab-content active" id="tab-quote">
+<div class="main-layout">
+<div class="main-panel" id="mainPanel">
+
+  <!-- SECTION 0: Project Info -->
+  <div class="card" id="sec-project">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="num">0</span>
+      <h2>Project Information</h2>
+      <span class="chevron">&#9660;</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field"><label>Client Name</label><input type="text" id="clientName" placeholder="e.g. Scott Holmes"></div>
+        <div class="field"><label>Project Address</label><input type="text" id="projectAddress" placeholder="e.g. 473 N. Highland Pkwy"></div>
+      </div>
+      <div class="row">
+        <div class="field-med"><label>City</label>
+          <select id="projectCity" onchange="recalc()">
+            <option value="washington">Washington</option>
+            <option value="stgeorge">St. George</option>
+            <option value="hurricane">Hurricane</option>
+            <option value="ivins">Ivins</option>
+            <option value="santaclara">Santa Clara</option>
+            <option value="leeds">Leeds</option>
+            <option value="laverkin">LaVerkin</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field-med"><label>Date</label><input type="date" id="projectDate"></div>
+        <div class="field"><label>Notes</label><input type="text" id="projectNotes" placeholder="Optional notes"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: Pool Dimensions -->
+  <div class="card" id="sec-dims">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="num">1</span>
+      <h2>Pool Dimensions &amp; Site</h2>
+      <span class="chevron">&#9660;</span>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field"><label>Pool Perimeter (lf)</label><input type="number" id="poolPerimeter" placeholder="0" oninput="recalc()"></div>
+        <div class="field"><label>Pool Surface Area (sqft)</label><input type="number" id="poolArea" placeholder="0" oninput="recalc()"></div>
+        <div class="field"><label>Pool Volume (gallons)</label><input type="number" id="poolGallons" placeholder="0" oninput="recalc()"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Shallow Depth (ft)</label><input type="number" id="depthShallow" placeholder="3.5" step="0.5" oninput="recalc()"></div>
+        <div class="field"><label>Deep Depth (ft)</label><input type="number" id="depthDeep" placeholder="5.5" step="0.5" oninput="recalc()"></div>
+        <div class="field"><label>Avg Depth (ft)</label><input type="number" id="depthAvg" readonly tabindex="-1" style="background:var(--gray-50);color:var(--gray-600)"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Equipment Pad to Pool (ft)</label><input type="number" id="padDistance" placeholder="0" oninput="recalc()">
+          <div class="hint">Distance from equipment pad to nearest pool plumbing connection</div>
+        </div>
+        <div class="field"><label>Light Side Length (ft)</label><input type="number" id="lightSide" placeholder="0" oninput="recalc()">
+          <div class="hint">Length of the pool side facing away from the house (where lights go)</div>
+        </div>
+        <div class="field"><label>Light Spacing (ft)</label>
+          <select id="lightSpacing" onchange="recalc()">
+            <option value="5">Every 5 ft</option>
+            <option value="6" selected>Every 6 ft</option>
+            <option value="7">Every 7 ft</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Steel / Rebar (lbs)</label><input type="number" id="steelLbs" placeholder="0" oninput="recalc()">
+          <div class="hint">Total rebar weight from structural plan</div>
+        </div>
+        <div class="field"><label>Shotcrete (cubic yards)</label><input type="number" id="shotcreteCY" placeholder="0" step="0.5" oninput="recalc()"></div>
+        <div class="field"><label>Interior Finish (sqft)</label><input type="number" id="interiorSqft" placeholder="0" oninput="recalc()">
+          <div class="hint">Total interior surface area for plaster/pebble</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: Features & Options -->
+  <div class="card" id="sec-features">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="num">2</span>
+      <h2>Features &amp; Options</h2>
+      <span class="chevron">&#9660;</span>
+    </div>
+    <div class="card-body">
+
+      <!-- Spa -->
+      <div class="toggle-row" onclick="toggleSwitch('optSpa')">
+        <div>
+          <div class="toggle-label">Spa / Hot Tub</div>
+          <div class="toggle-sub">Adds heater, 3-way valves, spa plumbing, spa jets</div>
+        </div>
+        <div class="toggle-switch"><input type="checkbox" id="optSpa" onchange="recalc()"><span class="toggle-track"></span></div>
+      </div>
+
+      <!-- Water Features -->
+      <div class="toggle-row" onclick="toggleSwitch('optWaterFeature')">
+        <div>
+          <div class="toggle-label">Water Feature(s)</div>
+          <div class="toggle-sub">Sheer descents, scuppers, deck jets — adds feature pump + plumbing</div>
+        </div>
+        <div class="toggle-switch"><input type="checkbox" id="optWaterFeature" onchange="recalc()"><span class="toggle-track"></span></div>
+      </div>
+      <div class="conditional" id="cond-waterfeature">
+        <div class="row">
+          <div class="field-med"><label>Sheer Descents</label>
+            <select id="sheerCount" onchange="recalc()">
+              <option value="0">None</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            </select>
+          </div>
+          <div class="field-med"><label>Raised Wall Required</label>
+            <select id="raisedWall" onchange="recalc()">
+              <option value="0">No</option><option value="1" selected>Yes</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Salt Chlorinator -->
+      <div class="toggle-row" onclick="toggleSwitch('optSalt')">
+        <div>
+          <div class="toggle-label">Salt Chlorinator</div>
+          <div class="toggle-sub">Requires automation/control board (not just timer)</div>
+        </div>
+        <div class="toggle-switch"><input type="checkbox" id="optSalt" onchange="recalc()"><span class="toggle-track"></span></div>
+      </div>
+
+      <!-- Automation -->
+      <div class="toggle-row" onclick="toggleSwitch('optAutomation')">
+        <div>
+          <div class="toggle-label">Automation / Control System</div>
+          <div class="toggle-sub">IntelliCenter or similar — auto-enabled if salt chlorinator selected</div>
+        </div>
+        <div class="toggle-switch"><input type="checkbox" id="optAutomation" onchange="recalc()"><span class="toggle-track"></span></div>
+      </div>
+
+      <!-- In-Floor Cleaning -->
+      <div class="toggle-row" onclick="toggleSwitch('optInFloor')">
+        <div>
+          <div class="toggle-label">In-Floor Cleaning System</div>
+          <div class="toggle-sub">IFCS hardware kit + in-floor labor</div>
+        </div>
+        <div class="toggle-switch"><input type="checkbox" id="optInFloor" onchange="recalc()"><span class="toggle-track"></span></div>
+      </div>
+
+      <!-- Auto Cover -->
+      <div class="toggle-row" onclick="toggleSwitch('optAutoCover')">
+        <div>
+          <div class="toggle-label">Automatic Cover</div>
+          <div class="toggle-sub">Cover Care or similar automatic pool cover</div>
+        </div>
+        <div class="toggle-switch"><input type="checkbox" id="optAutoCover" onchange="recalc()"><span class="toggle-track"></span></div>
+      </div>
+
+      <!-- Coping Type -->
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200);">
+        <div class="row">
+          <div class="field"><label>Coping Type</label>
+            <select id="copingType" onchange="recalc()">
+              <option value="pourinplace">Pour-in-Place Concrete</option>
+              <option value="stone">Stone Coping</option>
+              <option value="paver">Paver Coping</option>
+            </select>
+          </div>
+          <div class="field" id="copingStoneField" style="display:none">
+            <label>Stone Material Cost (per lf)</label>
+            <input type="number" id="copingStoneLF" placeholder="0" step="1" oninput="recalc()">
+            <div class="hint">Material cost per linear foot for selected stone</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Decking -->
+      <div class="row">
+        <div class="field"><label>Decking Type</label>
+          <select id="deckingType" onchange="recalc()">
+            <option value="none">None (by others)</option>
+            <option value="concrete">Poured Concrete</option>
+            <option value="pavers">Pavers</option>
+            <option value="flagstone">Synthetic Flagstone Pavers</option>
+          </select>
+        </div>
+        <div class="field" id="deckSqftField" style="display:none">
+          <label>Decking Area (sqft)</label>
+          <input type="number" id="deckSqft" placeholder="0" oninput="recalc()">
+        </div>
+      </div>
+
+      <!-- Raised Planter -->
+      <div class="toggle-row" onclick="toggleSwitch('optPlanter')">
+        <div>
+          <div class="toggle-label">Raised Planter Bed</div>
+          <div class="toggle-sub">Stone veneer planter — material + labor</div>
+        </div>
+        <div class="toggle-switch"><input type="checkbox" id="optPlanter" onchange="recalc()"><span class="toggle-track"></span></div>
+      </div>
+
+      <!-- Boulders -->
+      <div class="toggle-row" onclick="toggleSwitch('optBoulders')">
+        <div>
+          <div class="toggle-label">Integrated Boulder Package</div>
+          <div class="toggle-sub">Natural boulder placement around pool</div>
+        </div>
+        <div class="toggle-switch"><input type="checkbox" id="optBoulders" onchange="recalc()"><span class="toggle-track"></span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- SECTION 3: Equipment Package -->
+  <div class="card" id="sec-equipment">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="num">3</span>
+      <h2>Equipment Package</h2>
+      <span class="chevron">&#9660;</span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px;">
+        Equipment items auto-populate based on features selected above. Override any cost by typing directly in the cost field.
+      </p>
+      <div id="equipmentList"></div>
+      <div class="row" style="margin-top:14px;">
+        <div class="field"><label>Equipment Package Total (Your Cost)</label>
+          <input type="number" id="equipmentOverride" placeholder="Auto-calculated" oninput="recalc()">
+          <div class="hint">Enter Heritage Plus quote total here to override auto-calc</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SECTION 4: Cost Overrides -->
+  <div class="card" id="sec-overrides">
+    <div class="card-header" onclick="toggleCard(this)">
+      <span class="num">4</span>
+      <h2>Manual Cost Overrides</h2>
+      <span class="chevron">&#9660;</span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:13px;color:var(--gray-600);margin-bottom:14px;">
+        Override any auto-calculated line item. Leave blank to use the calculated value.
+      </p>
+      <div id="overrideList"></div>
+    </div>
+  </div>
+
+  <!-- Save/Actions -->
+  <div style="padding: 10px 0 40px; display: flex; gap: 12px;">
+    <button class="btn btn-gold" onclick="saveQuote()">&#128190; Save Quote</button>
+    <button class="btn btn-outline" onclick="newQuote()">&#10010; New Quote</button>
+    <button class="btn btn-outline" onclick="printSummary()">&#128424; Print Summary</button>
+  </div>
+
+</div>
+
+<!-- SIDE PANEL: Running Cost/Price Summary -->
+<div class="side-panel" id="sidePanel">
+
+  <div class="margin-box">
+    <div class="margin-title">Target Margin</div>
+    <div class="margin-value" id="marginDisplay">30%</div>
+    <input type="range" id="marginSlider" min="10" max="50" value="30" step="1" oninput="updateMargin()">
+    <div class="margin-labels"><span>10%</span><span>30%</span><span>50%</span></div>
+  </div>
+
+  <div class="side-heading">Cost Breakdown</div>
+
+  <div id="costBreakdown">
+    <!-- Populated by JS -->
+  </div>
+
+  <div class="cost-divider"></div>
+  <div class="cost-total-line">
+    <span class="total-label">TOTAL COST</span>
+    <span class="total-value" id="totalCost">$0</span>
+  </div>
+
+  <div class="price-box">
+    <div class="price-label">Customer Price</div>
+    <div class="price-value" id="totalPrice">$0</div>
+    <div class="price-sub">at <span id="priceMarginNote">30%</span> margin</div>
+  </div>
+
+</div>
+</div>
+</div>
+
+<!-- ==================== TAB 2: UNIT COSTS ==================== -->
+<div class="tab-content" id="tab-settings">
+<div class="settings-container">
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+      <h2 style="font-size:20px;font-weight:600;">Unit Costs &amp; Settings</h2>
+      <p style="font-size:13px;color:var(--gray-600);">Base rates used for all quotes. Changes auto-save to cloud.</p>
+    </div>
+    <span class="cloud-badge synced" id="settingsBadge">&#9729; Saved</span>
+  </div>
+
+  <!-- Global Margin Settings -->
+  <div class="settings-card">
+    <div class="sc-header"><span class="sc-icon">&#9881;</span><h3>Margin Defaults</h3></div>
+    <div class="sc-body">
+      <div class="settings-row">
+        <span class="sr-label">Default margin (all categories)</span>
+        <input type="number" id="set_defaultMargin" value="30" min="5" max="60" step="1" onchange="saveSettings()">
+        <span class="sr-unit">%</span>
+      </div>
+      <div class="settings-row">
+        <span class="sr-label">Equipment / products margin override</span>
+        <input type="number" id="set_equipMargin" value="25" min="5" max="60" step="1" onchange="saveSettings()">
+        <span class="sr-unit">%</span>
+      </div>
+      <div class="settings-row">
+        <span class="sr-label">Tile &amp; stone materials margin override</span>
+        <input type="number" id="set_tileMargin" value="25" min="5" max="60" step="1" onchange="saveSettings()">
+        <span class="sr-unit">%</span>
+      </div>
+      <div class="settings-note">Category overrides apply when margin slider is at default. Overridden categories use their own %.</div>
+    </div>
+  </div>
+
+  <!-- Site Prep -->
+  <div class="settings-card">
+    <div class="sc-header"><span class="sc-icon">&#9935;</span><h3>1. Site Prep &amp; Excavation</h3></div>
+    <div class="sc-body">
+      <div class="settings-row"><span class="sr-label">Geotechnical analysis</span><input type="number" id="set_geotech" value="1500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Excavation</span><input type="number" id="set_excavation" value="5200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Forming labor &amp; material</span><input type="number" id="set_forming" value="1000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">General conditions</span><input type="number" id="set_generalCond" value="0" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-note">Permits are calculated by city (see below)</div>
+    </div>
+  </div>
+
+  <!-- Permits by City -->
+  <div class="settings-card">
+    <div class="sc-header"><span class="sc-icon">&#127963;</span><h3>Permit Fees by City</h3></div>
+    <div class="sc-body">
+      <div class="settings-row"><span class="sr-label">Washington</span><input type="number" id="set_permit_washington" value="1100" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">St. George</span><input type="number" id="set_permit_stgeorge" value="800" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Hurricane</span><input type="number" id="set_permit_hurricane" value="900" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Ivins</span><input type="number" id="set_permit_ivins" value="900" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Santa Clara</span><input type="number" id="set_permit_santaclara" value="900" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Leeds / LaVerkin / Other</span><input type="number" id="set_permit_other" value="800" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+    </div>
+  </div>
+
+  <!-- Shell -->
+  <div class="settings-card">
+    <div class="sc-header"><span class="sc-icon">&#127946;</span><h3>2. Shell</h3></div>
+    <div class="sc-body">
+      <div class="settings-row"><span class="sr-label">Steel / rebar</span><input type="number" id="set_steelPerLb" value="1.00" step="0.01" onchange="saveSettings()"><span class="sr-unit">$/lb</span></div>
+      <div class="settings-row"><span class="sr-label">Shotcrete labor</span><input type="number" id="set_shotcretePerCY" value="300" step="5" onchange="saveSettings()"><span class="sr-unit">$/cy</span></div>
+      <div class="settings-row"><span class="sr-label">Detail &amp; strip forms</span><input type="number" id="set_detailForms" value="1200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Concrete supply</span><input type="number" id="set_concreteSupply" value="0" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Watering labor</span><input type="number" id="set_wateringLabor" value="0" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Miracote densifier</span><input type="number" id="set_miracote" value="1500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+    </div>
+  </div>
+
+  <!-- Plumbing -->
+  <div class="settings-card">
+    <div class="sc-header"><span class="sc-icon">&#128295;</span><h3>3. Plumbing</h3></div>
+    <div class="sc-body">
+      <div class="settings-row"><span class="sr-label">Underground plumbing (base)</span><input type="number" id="set_plumbBase" value="4000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">In-floor cleaning labor</span><input type="number" id="set_infloorLabor" value="2500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">IFCS hardware kit</span><input type="number" id="set_ifcsKit" value="3500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Sheer descent set labor (each)</span><input type="number" id="set_sheerLabor" value="350" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Sheer descent fixture (each)</span><input type="number" id="set_sheerFixture" value="450" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Finish hardware (drains, fittings)</span><input type="number" id="set_finishHardware" value="800" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+    </div>
+  </div>
+
+  <!-- Equipment -->
+  <div class="settings-card">
+    <div class="sc-header"><span class="sc-icon">&#9881;</span><h3>4. Equipment</h3></div>
+    <div class="sc-body">
+      <div class="settings-note">Equipment costs are typically entered per-quote from Heritage Plus pricing. These are default estimates.</div>
+      <div class="settings-row"><span class="sr-label">Main pump (3HP variable speed)</span><input type="number" id="set_mainPump" value="2200" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Feature pump (1.5HP)</span><input type="number" id="set_featurePump" value="1200" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Filter (cartridge)</span><input type="number" id="set_filter" value="900" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Heater (400k BTU)</span><input type="number" id="set_heater" value="3200" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Salt chlorinator</span><input type="number" id="set_saltCell" value="1400" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Automation / IntelliCenter</span><input type="number" id="set_automation" value="2800" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Pentair MicroBrite light</span><input type="number" id="set_lightEach" value="350" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Transformer</span><input type="number" id="set_transformer" value="150" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">3-way valve / actuator</span><input type="number" id="set_valve" value="350" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Electrical labor</span><input type="number" id="set_electricalLabor" value="5000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Gas line sub</span><input type="number" id="set_gasLine" value="1200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Conduit / wire material</span><input type="number" id="set_conduitPerFt" value="8" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/ft</span></div>
+    </div>
+  </div>
+
+  <!-- Tile & Coping -->
+  <div class="settings-card">
+    <div class="sc-header"><span class="sc-icon">&#9638;</span><h3>5. Tile &amp; Coping</h3></div>
+    <div class="sc-body">
+      <div class="settings-row"><span class="sr-label">Basecrete waterproofing</span><input type="number" id="set_basecrete" value="1800" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Tile material</span><input type="number" id="set_tileMat" value="1500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Tile labor</span><input type="number" id="set_tileLabor" value="1600" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Pour-in-place coping</span><input type="number" id="set_copingPIP" value="22" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Stone coping install (sub labor)</span><input type="number" id="set_copingStoneLabor" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Planter veneer material</span><input type="number" id="set_planterMat" value="2500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Planter veneer labor</span><input type="number" id="set_planterLabor" value="1800" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+    </div>
+  </div>
+
+  <!-- Decking -->
+  <div class="settings-card">
+    <div class="sc-header"><span class="sc-icon">&#9632;</span><h3>Decking</h3></div>
+    <div class="sc-body">
+      <div class="settings-row"><span class="sr-label">Poured concrete decking</span><input type="number" id="set_deckConcrete" value="12" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Paver decking</span><input type="number" id="set_deckPaver" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Synthetic flagstone pavers</span><input type="number" id="set_deckFlagstone" value="22" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+    </div>
+  </div>
+
+  <!-- Other -->
+  <div class="settings-card">
+    <div class="sc-header"><span class="sc-icon">&#9733;</span><h3>Other</h3></div>
+    <div class="sc-body">
+      <div class="settings-row"><span class="sr-label">Auto cover (Cover Care)</span><input type="number" id="set_autoCover" value="18000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Interior finish</span><input type="number" id="set_interiorPerSqft" value="12" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Boulder package</span><input type="number" id="set_boulders" value="1200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Startup &amp; pool prep</span><input type="number" id="set_startup" value="2000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Raised wall (structural + veneer)</span><input type="number" id="set_raisedWall" value="8000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ==================== TAB 3: SAVED QUOTES ==================== -->
+<div class="tab-content" id="tab-saved">
+<div class="saved-container">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <div>
+      <h2 style="font-size:20px;font-weight:600;">Saved Quotes</h2>
+      <p style="font-size:13px;color:var(--gray-600);">Previously saved quotes synced to cloud.</p>
+    </div>
+  </div>
+  <div id="savedList">
+    <div class="saved-empty">
+      <svg viewBox="0 0 64 64" fill="none"><rect x="10" y="14" width="44" height="40" rx="3" stroke="currentColor" stroke-width="2"/><path d="M20 26h24M20 34h18M20 42h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <h3>No saved quotes yet</h3>
+      <p>Build a quote and save it to see it here.</p>
+    </div>
+  </div>
+</div>
+</div>
+
+
+<script>
+/* ============================================================
+   PARAGON POOLS — QUOTE BUILDER ENGINE
+   ============================================================ */
+
+// ---- State ----
+let settings = {};
+let currentQuote = null;  // ID of loaded quote
+const SETTINGS_REF = 'quoteBuilder/settings';
+const QUOTES_REF = 'quoteBuilder/quotes';
+
+// ---- Tab Switching ----
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', b.textContent.toLowerCase().includes(tab === 'quote' ? 'new' : tab === 'settings' ? 'unit' : 'saved'));
+  });
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'saved') loadSavedQuotes();
+}
+
+// ---- Card Collapse ----
+function toggleCard(header) {
+  header.classList.toggle('collapsed');
+  header.nextElementSibling.classList.toggle('collapsed');
+}
+
+// ---- Toggle Switches ----
+function toggleSwitch(id) {
+  const cb = document.getElementById(id);
+  cb.checked = !cb.checked;
+  cb.dispatchEvent(new Event('change'));
+}
+
+// ---- Settings Load/Save ----
+function loadSettings() {
+  fbDb.ref(SETTINGS_REF).once('value').then(snap => {
+    const data = snap.val();
+    if (data) {
+      settings = data;
+      // Populate all settings fields
+      document.querySelectorAll('[id^="set_"]').forEach(el => {
+        const key = el.id.replace('set_', '');
+        if (data[key] !== undefined) el.value = data[key];
+      });
+    } else {
+      // First run — save defaults
+      saveSettings();
+    }
+    recalc();
+  }).catch(() => {
+    showCloudStatus('offline');
+  });
+}
+
+function saveSettings() {
+  const data = {};
+  document.querySelectorAll('[id^="set_"]').forEach(el => {
+    const key = el.id.replace('set_', '');
+    data[key] = parseFloat(el.value) || 0;
+  });
+  settings = data;
+  fbDb.ref(SETTINGS_REF).set(data).then(() => {
+    showCloudStatus('synced');
+    const badge = document.getElementById('settingsBadge');
+    badge.className = 'cloud-badge synced';
+    badge.innerHTML = '&#9729; Saved';
+  }).catch(() => showCloudStatus('offline'));
+  recalc();
+}
+
+function showCloudStatus(status) {
+  const badge = document.getElementById('cloudBadge');
+  if (status === 'synced') { badge.className = 'cloud-badge synced'; badge.innerHTML = '&#9729; Cloud'; }
+  else if (status === 'saving') { badge.className = 'cloud-badge saving'; badge.innerHTML = '&#9729; Saving\u2026'; }
+  else { badge.className = 'cloud-badge offline'; badge.innerHTML = '&#9888; Offline'; }
+}
+
+function s(key) {
+  // Shorthand to get a setting value
+  return settings[key] || parseFloat(document.getElementById('set_' + key)?.value) || 0;
+}
+
+function v(id) {
+  // Shorthand to get a form input value
+  return parseFloat(document.getElementById(id)?.value) || 0;
+}
+
+function ch(id) {
+  // Shorthand to check if a toggle is on
+  return document.getElementById(id)?.checked || false;
+}
+
+// ---- Business Rules ----
+function enforceRules() {
+  // Salt chlorinator requires automation
+  if (ch('optSalt') && !ch('optAutomation')) {
+    document.getElementById('optAutomation').checked = true;
+  }
+
+  // Water feature conditional panel
+  const wfCond = document.getElementById('cond-waterfeature');
+  wfCond.classList.toggle('visible', ch('optWaterFeature'));
+
+  // Stone coping shows material cost field
+  const copingType = document.getElementById('copingType').value;
+  document.getElementById('copingStoneField').style.display = (copingType === 'stone' || copingType === 'paver') ? '' : 'none';
+
+  // Decking sqft field
+  const deckType = document.getElementById('deckingType').value;
+  document.getElementById('deckSqftField').style.display = deckType !== 'none' ? '' : 'none';
+
+  // Spa requires heater and gas line — these are reflected in cost calc
+
+  // Toggle row active states
+  document.querySelectorAll('.toggle-row').forEach(row => {
+    const cb = row.querySelector('input[type=checkbox]');
+    if (cb) row.classList.toggle('active', cb.checked);
+  });
+
+  // Update avg depth
+  const shallow = v('depthShallow') || 3.5;
+  const deep = v('depthDeep') || 5.5;
+  document.getElementById('depthAvg').value = ((shallow + deep) / 2).toFixed(1);
+}
+
+// ---- Main Calculation Engine ----
+function recalc() {
+  enforceRules();
+
+  const perimeter = v('poolPerimeter');
+  const area = v('poolArea');
+  const gallons = v('poolGallons');
+  const padDist = v('padDistance');
+  const lightSideLen = v('lightSide');
+  const lightSpacing = parseInt(document.getElementById('lightSpacing').value) || 6;
+  const steelLbs = v('steelLbs');
+  const shotcreteCY = v('shotcreteCY');
+  const interiorSqft = v('interiorSqft');
+  const city = document.getElementById('projectCity').value;
+
+  // Calculate number of lights
+  const lightCount = lightSideLen > 0 ? Math.max(1, Math.ceil(lightSideLen / lightSpacing)) : 0;
+  // Conduit footage: each light needs a home run to pad (approx) + shared trench
+  const conduitFt = lightCount > 0 ? (padDist * 2 + lightSideLen) : 0;
+
+  // Number of valves needed
+  let valveCount = 0;
+  if (ch('optSpa')) valveCount += 2; // spa supply + return
+  if (ch('optWaterFeature')) valveCount += 1;
+  if (ch('optInFloor')) valveCount += 1;
+
+  // Sheer descent count
+  const sheerCount = ch('optWaterFeature') ? parseInt(document.getElementById('sheerCount').value) || 0 : 0;
+
+  // ---- Build line items ----
+  const lines = [];
+
+  // 1. Site Prep
+  lines.push({ cat: 'Site Prep', item: 'Geotechnical Analysis', cost: s('geotech') });
+  lines.push({ cat: 'Site Prep', item: 'Excavation', cost: s('excavation') });
+  lines.push({ cat: 'Site Prep', item: 'Forming Labor/Mat', cost: s('forming') });
+  const permitKey = 'permit_' + (city === 'stgeorge' ? 'stgeorge' : city === 'washington' ? 'washington' : city === 'hurricane' ? 'hurricane' : city === 'ivins' ? 'ivins' : city === 'santaclara' ? 'santaclara' : 'other');
+  lines.push({ cat: 'Site Prep', item: 'Permits & Fees', cost: s(permitKey) });
+  if (s('generalCond') > 0) lines.push({ cat: 'Site Prep', item: 'General Conditions', cost: s('generalCond') });
+
+  // 2. Shell
+  lines.push({ cat: 'Shell', item: 'Steel / Rebar' + (steelLbs > 0 ? ' (' + steelLbs.toLocaleString() + ' lbs)' : ''), cost: steelLbs * s('steelPerLb') });
+  lines.push({ cat: 'Shell', item: 'Shotcrete Labor' + (shotcreteCY > 0 ? ' (' + shotcreteCY + ' cy)' : ''), cost: shotcreteCY * s('shotcretePerCY') });
+  lines.push({ cat: 'Shell', item: 'Detail & Strip Forms', cost: s('detailForms') });
+  if (s('concreteSupply') > 0) lines.push({ cat: 'Shell', item: 'Concrete Supply', cost: s('concreteSupply') });
+  if (s('wateringLabor') > 0) lines.push({ cat: 'Shell', item: 'Watering Labor', cost: s('wateringLabor') });
+  lines.push({ cat: 'Shell', item: 'Miracote Densifier', cost: s('miracote') });
+
+  // 3. Plumbing
+  lines.push({ cat: 'Plumbing', item: 'Underground Plumbing', cost: s('plumbBase') });
+  if (ch('optInFloor')) {
+    lines.push({ cat: 'Plumbing', item: 'In-Floor Cleaning Labor', cost: s('infloorLabor') });
+    lines.push({ cat: 'Plumbing', item: 'IFCS Hardware Kit', cost: s('ifcsKit') });
+  }
+  if (sheerCount > 0) {
+    lines.push({ cat: 'Plumbing', item: 'Sheer Set Labor (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerLabor') });
+    lines.push({ cat: 'Plumbing', item: 'Sheer Fixtures (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerFixture'), marginCat: 'equip' });
+  }
+  lines.push({ cat: 'Plumbing', item: 'Finish Hardware', cost: s('finishHardware') });
+
+  // 4. Equipment
+  const equipOverride = v('equipmentOverride');
+  if (equipOverride > 0) {
+    lines.push({ cat: 'Equipment', item: 'Equipment Package (Heritage Quote)', cost: equipOverride, marginCat: 'equip' });
+  } else {
+    lines.push({ cat: 'Equipment', item: 'Main Pump (3HP VS)', cost: s('mainPump'), marginCat: 'equip' });
+    if (ch('optWaterFeature')) lines.push({ cat: 'Equipment', item: 'Feature Pump (1.5HP)', cost: s('featurePump'), marginCat: 'equip' });
+    lines.push({ cat: 'Equipment', item: 'Filter (Cartridge)', cost: s('filter'), marginCat: 'equip' });
+    if (ch('optSpa')) {
+      lines.push({ cat: 'Equipment', item: 'Heater (400k BTU)', cost: s('heater'), marginCat: 'equip' });
+    }
+    if (ch('optSalt')) lines.push({ cat: 'Equipment', item: 'Salt Chlorinator', cost: s('saltCell'), marginCat: 'equip' });
+    if (ch('optAutomation')) lines.push({ cat: 'Equipment', item: 'Automation / IntelliCenter', cost: s('automation'), marginCat: 'equip' });
+    if (valveCount > 0) lines.push({ cat: 'Equipment', item: 'Valves/Actuators (\u00d7' + valveCount + ')', cost: valveCount * s('valve'), marginCat: 'equip' });
+  }
+  if (lightCount > 0) {
+    lines.push({ cat: 'Equipment', item: 'MicroBrite Lights (\u00d7' + lightCount + ')', cost: lightCount * s('lightEach'), marginCat: 'equip' });
+    lines.push({ cat: 'Equipment', item: 'Transformer', cost: s('transformer'), marginCat: 'equip' });
+  }
+  lines.push({ cat: 'Equipment', item: 'Electrical Labor', cost: s('electricalLabor') });
+  if (ch('optSpa')) lines.push({ cat: 'Equipment', item: 'Gas Line Sub', cost: s('gasLine') });
+  if (conduitFt > 0) lines.push({ cat: 'Equipment', item: 'Conduit/Wire (' + Math.round(conduitFt) + ' ft)', cost: conduitFt * s('conduitPerFt') });
+
+  // 5. Tile & Coping
+  lines.push({ cat: 'Tile/Coping', item: 'Basecrete Waterproofing', cost: s('basecrete') });
+  lines.push({ cat: 'Tile/Coping', item: 'Tile Material', cost: s('tileMat'), marginCat: 'tile' });
+  lines.push({ cat: 'Tile/Coping', item: 'Tile Labor', cost: s('tileLabor') });
+
+  const copingType = document.getElementById('copingType').value;
+  if (copingType === 'pourinplace') {
+    lines.push({ cat: 'Tile/Coping', item: 'Coping — Pour-in-Place' + (perimeter > 0 ? ' (' + perimeter + ' lf)' : ''), cost: perimeter * s('copingPIP') });
+  } else if (copingType === 'stone' || copingType === 'paver') {
+    const stoneLF = v('copingStoneLF');
+    lines.push({ cat: 'Tile/Coping', item: 'Coping Material' + (perimeter > 0 ? ' (' + perimeter + ' lf)' : ''), cost: perimeter * stoneLF, marginCat: 'tile' });
+    lines.push({ cat: 'Tile/Coping', item: 'Coping Install Labor' + (perimeter > 0 ? ' (' + perimeter + ' lf)' : ''), cost: perimeter * s('copingStoneLabor') });
+  }
+
+  if (ch('optPlanter')) {
+    lines.push({ cat: 'Tile/Coping', item: 'Planter Veneer (Material)', cost: s('planterMat'), marginCat: 'tile' });
+    lines.push({ cat: 'Tile/Coping', item: 'Planter Veneer (Labor)', cost: s('planterLabor') });
+  }
+
+  // 6. Decking
+  const deckType = document.getElementById('deckingType').value;
+  const deckSqft = v('deckSqft');
+  if (deckType === 'concrete' && deckSqft > 0) {
+    lines.push({ cat: 'Decking', item: 'Concrete Decking (' + deckSqft + ' sqft)', cost: deckSqft * s('deckConcrete') });
+  } else if (deckType === 'pavers' && deckSqft > 0) {
+    lines.push({ cat: 'Decking', item: 'Paver Decking (' + deckSqft + ' sqft)', cost: deckSqft * s('deckPaver') });
+  } else if (deckType === 'flagstone' && deckSqft > 0) {
+    lines.push({ cat: 'Decking', item: 'Flagstone Pavers (' + deckSqft + ' sqft)', cost: deckSqft * s('deckFlagstone') });
+  }
+
+  // 7. Auto Cover
+  if (ch('optAutoCover')) lines.push({ cat: 'Auto Cover', item: 'Automatic Cover (Cover Care)', cost: s('autoCover'), marginCat: 'equip' });
+
+  // 8. Interior
+  if (interiorSqft > 0) {
+    lines.push({ cat: 'Interior', item: 'Interior Finish (' + interiorSqft + ' sqft)', cost: interiorSqft * s('interiorPerSqft') });
+  } else {
+    lines.push({ cat: 'Interior', item: 'Interior Finish', cost: 0 });
+  }
+
+  // 9. Boulders
+  if (ch('optBoulders')) lines.push({ cat: 'Other', item: 'Integrated Boulder Package', cost: s('boulders') });
+
+  // Raised Wall
+  if (ch('optWaterFeature') && parseInt(document.getElementById('raisedWall').value) === 1) {
+    lines.push({ cat: 'Other', item: 'Raised Wall (Structural + Veneer)', cost: s('raisedWall') });
+  }
+
+  // 10. Startup
+  lines.push({ cat: 'Prep/Startup', item: 'Startup & Pool Prep', cost: s('startup') });
+
+  // ---- Calculate totals with margin ----
+  const globalMargin = v('marginSlider') / 100;
+  const equipMargin = s('equipMargin') / 100 || globalMargin;
+  const tileMargin = s('tileMargin') / 100 || globalMargin;
+
+  let totalCost = 0;
+  let totalPrice = 0;
+
+  // Group by category for display
+  const cats = {};
+  const catOrder = ['Site Prep', 'Shell', 'Plumbing', 'Equipment', 'Tile/Coping', 'Decking', 'Auto Cover', 'Interior', 'Other', 'Prep/Startup'];
+
+  lines.forEach(line => {
+    const cost = Math.round(line.cost || 0);
+    let margin = globalMargin;
+    if (line.marginCat === 'equip') margin = equipMargin;
+    if (line.marginCat === 'tile') margin = tileMargin;
+    const price = margin < 1 ? Math.round(cost / (1 - margin)) : cost;
+
+    if (!cats[line.cat]) cats[line.cat] = { lines: [], costTotal: 0, priceTotal: 0 };
+    cats[line.cat].lines.push({ ...line, cost, price });
+    cats[line.cat].costTotal += cost;
+    cats[line.cat].priceTotal += price;
+    totalCost += cost;
+    totalPrice += price;
+  });
+
+  // ---- Render side panel ----
+  let html = '';
+  catOrder.forEach(cat => {
+    if (!cats[cat]) return;
+    const c = cats[cat];
+    html += '<div class="cost-section">';
+    html += '<div class="cost-section-title"><span>' + cat + '</span><span class="section-total">$' + c.costTotal.toLocaleString() + '</span></div>';
+    c.lines.forEach(l => {
+      const zeroClass = l.cost === 0 ? ' zero' : '';
+      html += '<div class="cost-line"><span class="item-name">' + l.item + '</span><span class="item-cost' + zeroClass + '">$' + l.cost.toLocaleString() + '</span></div>';
+    });
+    html += '</div>';
+  });
+
+  document.getElementById('costBreakdown').innerHTML = html;
+  document.getElementById('totalCost').textContent = '$' + totalCost.toLocaleString();
+  document.getElementById('totalPrice').textContent = '$' + totalPrice.toLocaleString();
+  document.getElementById('priceMarginNote').textContent = v('marginSlider') + '%';
+}
+
+function updateMargin() {
+  const val = document.getElementById('marginSlider').value;
+  document.getElementById('marginDisplay').textContent = val + '%';
+  recalc();
+}
+
+// ---- Save/Load Quotes ----
+function getQuoteData() {
+  const data = {
+    project: {
+      client: document.getElementById('clientName').value,
+      address: document.getElementById('projectAddress').value,
+      city: document.getElementById('projectCity').value,
+      date: document.getElementById('projectDate').value,
+      notes: document.getElementById('projectNotes').value
+    },
+    dims: {},
+    options: {},
+    margin: v('marginSlider'),
+    equipmentOverride: v('equipmentOverride'),
+    savedAt: new Date().toISOString()
+  };
+  // Gather dims
+  ['poolPerimeter','poolArea','poolGallons','depthShallow','depthDeep','padDistance','lightSide','lightSpacing','steelLbs','shotcreteCY','interiorSqft'].forEach(id => {
+    data.dims[id] = document.getElementById(id)?.value || '';
+  });
+  // Gather options
+  ['optSpa','optWaterFeature','optSalt','optAutomation','optInFloor','optAutoCover','optPlanter','optBoulders'].forEach(id => {
+    data.options[id] = document.getElementById(id)?.checked || false;
+  });
+  ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft'].forEach(id => {
+    data.options[id] = document.getElementById(id)?.value || '';
+  });
+  return data;
+}
+
+function loadQuoteData(data) {
+  if (!data) return;
+  // Project
+  if (data.project) {
+    document.getElementById('clientName').value = data.project.client || '';
+    document.getElementById('projectAddress').value = data.project.address || '';
+    document.getElementById('projectCity').value = data.project.city || 'washington';
+    document.getElementById('projectDate').value = data.project.date || '';
+    document.getElementById('projectNotes').value = data.project.notes || '';
+  }
+  // Dims
+  if (data.dims) {
+    Object.keys(data.dims).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = data.dims[id];
+    });
+  }
+  // Options
+  if (data.options) {
+    ['optSpa','optWaterFeature','optSalt','optAutomation','optInFloor','optAutoCover','optPlanter','optBoulders'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!data.options[id];
+    });
+    ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && data.options[id] !== undefined) el.value = data.options[id];
+    });
+  }
+  if (data.margin) document.getElementById('marginSlider').value = data.margin;
+  if (data.equipmentOverride) document.getElementById('equipmentOverride').value = data.equipmentOverride;
+  updateMargin();
+  recalc();
+}
+
+function saveQuote() {
+  const data = getQuoteData();
+  const name = data.project.client || 'Unnamed Quote';
+
+  // Get total price for display
+  const totalPrice = document.getElementById('totalPrice').textContent;
+  data.displayPrice = totalPrice;
+
+  showCloudStatus('saving');
+
+  if (currentQuote) {
+    // Update existing
+    fbDb.ref(QUOTES_REF + '/' + currentQuote).set(data).then(() => {
+      showCloudStatus('synced');
+      alert('Quote updated: ' + name);
+    });
+  } else {
+    // New quote
+    const newRef = fbDb.ref(QUOTES_REF).push();
+    currentQuote = newRef.key;
+    newRef.set(data).then(() => {
+      showCloudStatus('synced');
+      alert('Quote saved: ' + name);
+    });
+  }
+}
+
+function newQuote() {
+  if (document.getElementById('clientName').value && !confirm('Start a new quote? Unsaved changes will be lost.')) return;
+  currentQuote = null;
+  // Clear all fields
+  document.querySelectorAll('#tab-quote input[type=text], #tab-quote input[type=number], #tab-quote input[type=date]').forEach(el => el.value = '');
+  document.querySelectorAll('#tab-quote input[type=checkbox]').forEach(el => el.checked = false);
+  document.querySelectorAll('#tab-quote select').forEach(el => el.selectedIndex = 0);
+  document.getElementById('marginSlider').value = s('defaultMargin') || 30;
+  updateMargin();
+  recalc();
+}
+
+function loadSavedQuotes() {
+  fbDb.ref(QUOTES_REF).once('value').then(snap => {
+    const data = snap.val();
+    const container = document.getElementById('savedList');
+    if (!data) {
+      container.innerHTML = '<div class="saved-empty"><svg viewBox="0 0 64 64" fill="none"><rect x="10" y="14" width="44" height="40" rx="3" stroke="currentColor" stroke-width="2"/><path d="M20 26h24M20 34h18M20 42h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><h3>No saved quotes yet</h3><p>Build a quote and save it to see it here.</p></div>';
+      return;
+    }
+    let html = '<div class="saved-list">';
+    const entries = Object.entries(data).sort((a,b) => (b[1].savedAt || '').localeCompare(a[1].savedAt || ''));
+    entries.forEach(([key, q]) => {
+      const name = q.project?.client || 'Unnamed';
+      const city = q.project?.city || '';
+      const date = q.savedAt ? new Date(q.savedAt).toLocaleDateString() : '';
+      const price = q.displayPrice || '$0';
+      html += '<div class="saved-item" onclick="loadSavedQuote(\'' + key + '\')">';
+      html += '<div class="si-info"><div class="si-name">' + name + '</div><div class="si-date">' + city + (date ? ' &middot; ' + date : '') + '</div></div>';
+      html += '<div class="si-price">' + price + '</div>';
+      html += '<div class="si-actions"><button class="si-btn delete" onclick="event.stopPropagation();deleteSavedQuote(\'' + key + '\')">Delete</button></div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  });
+}
+
+function loadSavedQuote(key) {
+  fbDb.ref(QUOTES_REF + '/' + key).once('value').then(snap => {
+    const data = snap.val();
+    if (data) {
+      currentQuote = key;
+      loadQuoteData(data);
+      switchTab('quote');
+    }
+  });
+}
+
+function deleteSavedQuote(key) {
+  if (!confirm('Delete this quote permanently?')) return;
+  fbDb.ref(QUOTES_REF + '/' + key).remove().then(() => {
+    if (currentQuote === key) currentQuote = null;
+    loadSavedQuotes();
+  });
+}
+
+function printSummary() {
+  window.print();
+}
+
+// ---- Init ----
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('projectDate').value = new Date().toISOString().slice(0, 10);
+  loadSettings();
+});
+</script>
+
+</body>
+</html>
