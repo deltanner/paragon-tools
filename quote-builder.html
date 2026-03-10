@@ -395,8 +395,8 @@
         </div>
       </div>
       <div class="row">
-        <div class="field"><label>Steel / Rebar (lbs)</label><input type="number" id="steelLbs" placeholder="0" oninput="recalc()">
-          <div class="hint">Total rebar weight from structural plan</div>
+        <div class="field"><label>Deep Area % (>5.5')</label><input type="number" id="deepAreaPct" placeholder="30" min="0" max="100" oninput="recalc()">
+          <div class="hint">Approx % of pool surface area deeper than 5.5 ft (for rebar pricing)</div>
         </div>
         <div class="field"><label>Shotcrete (cubic yards)</label><input type="number" id="shotcreteCY" placeholder="0" step="0.5" oninput="recalc()"></div>
         <div class="field"><label>Interior Finish (sqft)</label><input type="number" id="interiorSqft" placeholder="0" oninput="recalc()">
@@ -685,7 +685,9 @@
   <div class="settings-card">
     <div class="sc-header"><span class="sc-icon">&#127946;</span><h3>2. Shell</h3></div>
     <div class="sc-body">
-      <div class="settings-row"><span class="sr-label">Steel / rebar</span><input type="number" id="set_steelPerLb" value="1.00" step="0.01" onchange="saveSettings()"><span class="sr-unit">$/lb</span></div>
+      <div class="settings-row"><span class="sr-label">Rebar — Method A (per lf of perimeter)</span><input type="number" id="set_rebarPerLF" value="41" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Rebar — Method B shallow (&le;5.5')</span><input type="number" id="set_rebarShallowSqft" value="5.16" step="0.01" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Rebar — Method B deep (&gt;5.5')</span><input type="number" id="set_rebarDeepSqft" value="7.20" step="0.01" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
       <div class="settings-row"><span class="sr-label">Shotcrete labor</span><input type="number" id="set_shotcretePerCY" value="300" step="5" onchange="saveSettings()"><span class="sr-unit">$/cy</span></div>
       <div class="settings-row"><span class="sr-label">Detail &amp; strip forms</span><input type="number" id="set_detailForms" value="1200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
       <div class="settings-row"><span class="sr-label">Concrete supply</span><input type="number" id="set_concreteSupply" value="0" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
@@ -941,7 +943,7 @@ function recalc() {
   const padDist = v('padDistance');
   const lightSideLen = v('lightSide');
   const lightSpacing = parseInt(document.getElementById('lightSpacing').value) || 6;
-  const steelLbs = v('steelLbs');
+  const deepAreaPct = v('deepAreaPct') || 0;
   const shotcreteCY = v('shotcreteCY');
   const interiorSqft = v('interiorSqft');
   const city = document.getElementById('projectCity').value;
@@ -998,7 +1000,15 @@ function recalc() {
   if (s('generalCond') > 0) lines.push({ cat: 'Site Prep', item: 'General Conditions', cost: s('generalCond') });
 
   // 2. Shell
-  lines.push({ cat: 'Shell', item: 'Steel / Rebar' + (steelLbs > 0 ? ' (' + steelLbs.toLocaleString() + ' lbs)' : ''), cost: steelLbs * s('steelPerLb') });
+  // Rebar: calculate both methods, use cheaper
+  const rebarMethodA = perimeter * s('rebarPerLF');
+  const deepArea = area * (deepAreaPct / 100);
+  const shallowArea = area - deepArea;
+  const rebarMethodB = (shallowArea * s('rebarShallowSqft')) + (deepArea * s('rebarDeepSqft'));
+  const rebarCost = (area > 0 && perimeter > 0) ? Math.min(rebarMethodA, rebarMethodB) : (perimeter > 0 ? rebarMethodA : 0);
+  const rebarMethod = (area > 0 && perimeter > 0) ? (rebarMethodA <= rebarMethodB ? 'A' : 'B') : 'A';
+  const rebarDesc = rebarCost > 0 ? ' (Method ' + rebarMethod + ': $' + Math.round(rebarCost).toLocaleString() + ')' : '';
+  lines.push({ cat: 'Shell', item: 'Steel / Rebar' + rebarDesc, cost: rebarCost });
   lines.push({ cat: 'Shell', item: 'Shotcrete Labor' + (shotcreteCY > 0 ? ' (' + shotcreteCY + ' cy)' : ''), cost: shotcreteCY * s('shotcretePerCY') });
   lines.push({ cat: 'Shell', item: 'Detail & Strip Forms', cost: s('detailForms') });
   if (s('concreteSupply') > 0) lines.push({ cat: 'Shell', item: 'Concrete Supply', cost: s('concreteSupply') });
@@ -1320,9 +1330,7 @@ function parseTakeoff(text) {
   const rebar = extract(/Rebar:\s*([\d,]+'\s*\d*"?)/, poolText);
   if (rebar) {
     data.rebarFt = parseFeetInches(rebar);
-    // Convert linear feet of rebar to approximate lbs (typically ~0.67 lbs/ft for #4 rebar)
-    data.steelLbs = Math.round(data.rebarFt * 0.67);
-    data._summary.push({ label: 'Rebar', value: rebar + ' \u2192 ~' + data.steelLbs + ' lbs' });
+    data._summary.push({ label: 'Rebar', value: rebar });
   }
 
   const intSqft = extract(/Int Surface Area:\s*([\d,.]+)\s*ft/, poolText);
@@ -1488,7 +1496,7 @@ function applyTakeoffData(data) {
   if (data.depthShallow) document.getElementById('depthShallow').value = data.depthShallow;
   if (data.depthDeep) document.getElementById('depthDeep').value = data.depthDeep;
   if (data.shotcreteCY) document.getElementById('shotcreteCY').value = data.shotcreteCY;
-  if (data.steelLbs) document.getElementById('steelLbs').value = data.steelLbs;
+  // Note: rebar pricing now uses deepAreaPct (not imported from takeoff)
   if (data.interiorSqft) document.getElementById('interiorSqft').value = Math.round(data.interiorSqft);
 
   // Spa configuration
@@ -1551,7 +1559,7 @@ function getQuoteData() {
     savedAt: new Date().toISOString()
   };
   // Gather dims
-  ['poolPerimeter','poolArea','poolGallons','depthShallow','depthDeep','padDistance','lightSide','lightSpacing','steelLbs','shotcreteCY','interiorSqft'].forEach(id => {
+  ['poolPerimeter','poolArea','poolGallons','depthShallow','depthDeep','padDistance','lightSide','lightSpacing','deepAreaPct','shotcreteCY','interiorSqft'].forEach(id => {
     data.dims[id] = document.getElementById(id)?.value || '';
   });
   // Spa config
