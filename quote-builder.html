@@ -142,7 +142,7 @@
   .cost-section { margin-bottom: 16px; }
   .cost-section-title { font-size: 12px; font-weight: 600; color: var(--gold-dark); text-transform: uppercase; letter-spacing: 0.8px; padding: 6px 0; border-bottom: 1px solid var(--gray-200); margin-bottom: 6px; cursor: pointer; display: flex; align-items: center; }
   .cost-section-title .cat-name { flex: 1; }
-  .cost-section-title .section-total { font-size: 13px; color: var(--gray-800); font-weight: 700; width: 80px; text-align: right; }
+  .cost-section-title .section-total { font-size: 13px; color: var(--gray-800); font-weight: 700; width: 80px; text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; }
   .cost-line { display: flex; align-items: center; padding: 4px 0; font-size: 13px; }
   .cost-line .item-name { flex: 1; color: var(--gray-600); }
   .cost-line .item-cost { color: var(--gray-800); font-weight: 500; font-variant-numeric: tabular-nums; width: 80px; text-align: right; flex-shrink: 0; }
@@ -151,8 +151,8 @@
   .cost-override-input {
     width: 100%; border: none; background: transparent; text-align: right;
     font-family: inherit; font-size: 13px; font-weight: 500; color: var(--gray-800);
-    font-variant-numeric: tabular-nums; padding: 2px 0; margin: 0; outline: none;
-    cursor: pointer; -moz-appearance: textfield;
+    font-variant-numeric: tabular-nums; padding: 0; margin: 0; outline: none;
+    line-height: 1.5; cursor: pointer; -moz-appearance: textfield; box-sizing: border-box;
   }
   .cost-override-input::-webkit-inner-spin-button,
   .cost-override-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
