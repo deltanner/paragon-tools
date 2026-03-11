@@ -536,7 +536,7 @@ function createCircuit(name, type) {
   const c = {
     name: name,
     type: type, // 'main' or 'feature'
-    pipeRuns: [{ side: 'suction', diameter: '2', length: 20 }, { side: 'return', diameter: '2', length: 30 }],
+    pipeRuns: [{ side: 'suction', diameter: '2', length: 20, parallel: 1 }, { side: 'return', diameter: '2', length: 30, parallel: 1 }],
     fittings: {},
     fittingDiameter: '2',
     equipment: {},
@@ -638,7 +638,8 @@ function buildCircuitHTML(c, ci) {
     if (c.pipeRuns.length > 1) html += `<button class="remove-run-btn" onclick="removePipeRun(${ci},${ri})">Remove</button>`;
     html += `<div class="row"><div class="field"><label>Side</label><select onchange="circuits[${ci}].pipeRuns[${ri}].side=this.value;renderAll()"><option value="suction" ${r.side==='suction'?'selected':''}>Suction</option><option value="return" ${r.side==='return'?'selected':''}>Return / Pressure</option></select></div>`;
     html += `<div class="field"><label>Diameter (inches)</label><select onchange="circuits[${ci}].pipeRuns[${ri}].diameter=this.value;syncFittingDiameter(${ci});renderAll()">${PIPE_DIAMETERS.map(d=>`<option value="${d}" ${r.diameter===d?'selected':''}>${d}"</option>`).join('')}</select></div>`;
-    html += `<div class="field"><label>Length (feet)</label><input type="number" value="${r.length}" min="0" onchange="circuits[${ci}].pipeRuns[${ri}].length=parseFloat(this.value)||0"></div></div></div>`;
+    html += `<div class="field"><label>Length (feet)</label><input type="number" value="${r.length}" min="0" onchange="circuits[${ci}].pipeRuns[${ri}].length=parseFloat(this.value)||0"></div>`;
+    html += `<div class="field"><label>Parallel Lines</label><input type="number" value="${r.parallel || 1}" min="1" max="10" onchange="circuits[${ci}].pipeRuns[${ri}].parallel=parseInt(this.value)||1;renderAll()"><div class="hint">${(r.parallel || 1) > 1 ? 'Flow splits: ' + (r.parallel || 1) + ' lines share the load' : '1 = full flow (trunk). Set 2+ where lines split.'}</div></div></div></div>`;
   });
   html += `<button class="add-run-btn" onclick="addPipeRun(${ci})">+ Add Pipe Run</button>`;
 
@@ -655,7 +656,7 @@ function buildCircuitHTML(c, ci) {
 }
 
 function addPipeRun(ci) {
-  circuits[ci].pipeRuns.push({ side: 'return', diameter: '2', length: 10 });
+  circuits[ci].pipeRuns.push({ side: 'return', diameter: '2', length: 10, parallel: 1 });
   renderAll();
 }
 function removePipeRun(ci, ri) {
@@ -754,15 +755,25 @@ function calculate() {
     let pipeDetails = [], fittingDetails = [], equipDetails = [];
     let velocityWarnings = [];
 
-    // Pipe runs
+    // Pipe runs — parallel lines divide flow (e.g. 3 suction lines each carry 1/3 of total)
     c.pipeRuns.forEach((r, ri) => {
-      const lossPer100 = frictionLossPer100ft(gpm, parseFloat(r.diameter));
-      const loss = lossPer100 * r.length / 100;
-      const vel = velocityFPS(gpm, parseFloat(r.diameter));
+      const par = Math.max(1, parseInt(r.parallel) || 1);
+      const gpmPerLine = gpm / par;
+      const lossPer100 = frictionLossPer100ft(gpmPerLine, parseFloat(r.diameter));
+      const loss = lossPer100 * r.length / 100; // head loss through ONE path (parallel paths are equal)
+      const vel = velocityFPS(gpmPerLine, parseFloat(r.diameter));
       pipeLoss += loss;
-      pipeDetails.push({ label: `${r.side === 'suction' ? 'Suction' : 'Return'} — ${r.diameter}" × ${r.length} ft`, loss: loss, velocity: vel });
-      if (r.side === 'suction' && vel > 6) velocityWarnings.push(`Suction run #${ri+1} (${r.diameter}" pipe): ${vel.toFixed(1)} ft/s (max recommended: 6 ft/s)`);
-      if (r.side === 'return' && vel > 8) velocityWarnings.push(`Return run #${ri+1} (${r.diameter}" pipe): ${vel.toFixed(1)} ft/s (max recommended: 8 ft/s)`);
+      const parLabel = par > 1 ? ` (${par} parallel — ${gpmPerLine.toFixed(0)} GPM ea)` : '';
+      pipeDetails.push({ label: `${r.side === 'suction' ? 'Suction' : 'Return'} — ${r.diameter}" × ${r.length} ft${parLabel}`, loss: loss, velocity: vel, side: r.side });
+      // Velocity limits: suction ≤ 4 ft/s ideal (warn >4, danger >6), return ≤ 6 ft/s ideal (warn >6, danger >8)
+      if (r.side === 'suction' && vel > 4) {
+        const severity = vel > 6 ? '⛔' : '⚠';
+        velocityWarnings.push(`${severity} Suction run #${ri+1} (${r.diameter}"${par > 1 ? ' ×' + par : ''}): ${vel.toFixed(1)} ft/s ${vel > 6 ? '— exceeds 6 ft/s MAX' : '— above 4 ft/s ideal (risk of cavitation)'}`);
+      }
+      if (r.side === 'return' && vel > 6) {
+        const severity = vel > 8 ? '⛔' : '⚠';
+        velocityWarnings.push(`${severity} Return run #${ri+1} (${r.diameter}"${par > 1 ? ' ×' + par : ''}): ${vel.toFixed(1)} ft/s ${vel > 8 ? '— exceeds 8 ft/s MAX' : '— above 6 ft/s recommended limit'}`);
+      }
     });
 
     // Fittings
@@ -847,7 +858,12 @@ function renderResults(allResults, overallTDH, totalGPM) {
   allResults.forEach(r => {
     html += `<div class="breakdown"><h3 style="font-size:15px;margin:20px 0 10px;color:var(--gray-800);">${r.name} <span style="font-size:12px;color:var(--gray-600);">(${r.type === 'main' ? 'Equipment Circuit' : 'Feature Circuit'} — ${r.gpm.toFixed(1)} GPM)</span></h3>`;
     html += '<table><thead><tr><th>Component</th><th style="text-align:right;">Head Loss (ft)</th></tr></thead><tbody>';
-    r.pipeDetails.forEach(p => html += `<tr><td>${p.label} <span style="color:var(--gray-600);font-size:11px;">(${p.velocity.toFixed(1)} ft/s)</span></td><td style="text-align:right;">${p.loss.toFixed(2)}</td></tr>`);
+    r.pipeDetails.forEach(p => {
+      const maxVel = p.side === 'suction' ? 4 : 6;
+      const dangerVel = p.side === 'suction' ? 6 : 8;
+      const velColor = p.velocity > dangerVel ? 'var(--red)' : p.velocity > maxVel ? 'var(--orange)' : 'var(--green)';
+      html += `<tr><td>${p.label} <span style="color:${velColor};font-size:11px;font-weight:600;">(${p.velocity.toFixed(1)} ft/s)</span></td><td style="text-align:right;">${p.loss.toFixed(2)}</td></tr>`;
+    });
     r.fittingDetails.forEach(f => html += `<tr><td>${f.label}</td><td style="text-align:right;">${f.loss.toFixed(2)}</td></tr>`);
     r.equipDetails.forEach(e => html += `<tr><td>${e.label}</td><td style="text-align:right;">${e.loss.toFixed(2)}</td></tr>`);
     if (r.staticHead > 0) html += `<tr><td>Static Head / Elevation</td><td style="text-align:right;">${r.staticHead.toFixed(2)}</td></tr>`;
@@ -922,7 +938,7 @@ function gatherState() {
     circuits: circuits.map(c => ({
       name: c.name,
       type: c.type,
-      pipeRuns: c.pipeRuns.map(r => ({ side: r.side, diameter: r.diameter, length: r.length })),
+      pipeRuns: c.pipeRuns.map(r => ({ side: r.side, diameter: r.diameter, length: r.length, parallel: r.parallel || 1 })),
       fittings: { ...c.fittings },
       fittingDiameter: c.fittingDiameter,
       equipment: { ...c.equipment },
@@ -941,7 +957,7 @@ function restoreState(state) {
 
   circuits = state.circuits.map(c => {
     const nc = createCircuit(c.name, c.type);
-    nc.pipeRuns = c.pipeRuns || nc.pipeRuns;
+    nc.pipeRuns = (c.pipeRuns || nc.pipeRuns).map(r => ({ ...r, parallel: r.parallel || 1 }));
     nc.fittings = { ...nc.fittings, ...c.fittings };
     // Auto-sync fittingDiameter from pipe runs
     nc.fittingDiameter = c.fittingDiameter || '2';
@@ -1597,20 +1613,20 @@ function calcFilter() {
   document.getElementById('fltVelocity').textContent = velPipe.toFixed(1);
   document.getElementById('fltVelLabel').textContent = 'ft/sec in ' + smallestPipe + '" pipe';
 
-  // Velocity warning
+  // Velocity warning — check against suction (4 fps) and return (6 fps) limits
   const velWarn = document.getElementById('fltVelWarn');
-  if (velPipe > 8) {
+  if (velPipe > 6) {
     velWarn.style.display = '';
     velWarn.style.background = '';
     velWarn.style.borderColor = '';
     velWarn.style.color = '';
-    velWarn.innerHTML = '<strong>⚠ High velocity:</strong> ' + velPipe.toFixed(1) + ' ft/s in ' + smallestPipe + '" pipe exceeds recommended 8 ft/s max. Consider upsizing pipe on the suction/return lines.';
-  } else if (velPipe > 6) {
+    velWarn.innerHTML = '<strong>⚠ High velocity:</strong> ' + velPipe.toFixed(1) + ' ft/s in ' + smallestPipe + '" pipe exceeds 6 ft/s return limit. On suction side this is dangerously high (max 4 ft/s). Upsize pipe or add parallel lines.';
+  } else if (velPipe > 4) {
     velWarn.style.display = '';
-    velWarn.innerHTML = '<strong>Note:</strong> ' + velPipe.toFixed(1) + ' ft/s in ' + smallestPipe + '" pipe is within limits but on the higher side. Ideal range is 4–6 ft/s for quieter operation and lower friction loss.';
-    velWarn.style.background = '#e8f5e9';
-    velWarn.style.borderColor = '#4caf50';
-    velWarn.style.color = '#2e7d32';
+    velWarn.innerHTML = '<strong>Note:</strong> ' + velPipe.toFixed(1) + ' ft/s in ' + smallestPipe + '" pipe is OK for return side but exceeds 4 ft/s suction limit. Ensure suction lines are upsized or use multiple parallel suction runs.';
+    velWarn.style.background = '#fff3e0';
+    velWarn.style.borderColor = '#ffb74d';
+    velWarn.style.color = '#e65100';
   } else {
     velWarn.style.display = 'none';
   }
@@ -1704,19 +1720,26 @@ function calcFilter() {
   // ── Pipe velocity reference at this flow rate ──
   const pvEl = document.getElementById('fltPipeVelocity');
   let pvHtml = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
-  pvHtml += '<tr style="background:var(--gray-100);font-weight:600;"><td style="padding:6px 10px;">Pipe Size</td><td style="padding:6px 10px;text-align:right;">Velocity (ft/s)</td><td style="padding:6px 10px;text-align:right;">Max Flow at 8 ft/s</td><td style="padding:6px 10px;">Status</td></tr>';
+  pvHtml += '<tr style="background:var(--gray-100);font-weight:600;"><td style="padding:6px 10px;">Pipe Size</td><td style="padding:6px 10px;text-align:right;">Velocity (ft/s)</td><td style="padding:6px 10px;text-align:right;">Max @ 4 ft/s<br><span style="font-weight:400;font-size:10px;">suction</span></td><td style="padding:6px 10px;text-align:right;">Max @ 6 ft/s<br><span style="font-weight:400;font-size:10px;">return</span></td><td style="padding:6px 10px;">Suction</td><td style="padding:6px 10px;">Return</td></tr>';
   Object.keys(PIPE_IDS).forEach(sz => {
     const v = filterVelocityFPS(reqGPM, PIPE_IDS[sz]);
-    const maxFlow = (8 * PIPE_IDS[sz] * PIPE_IDS[sz]) / 0.4085;
-    let status, statusColor;
-    if (v <= 6) { status = '✓ Ideal'; statusColor = 'var(--green)'; }
-    else if (v <= 8) { status = '~ OK'; statusColor = '#f9a825'; }
-    else { status = '✗ Too fast'; statusColor = '#d93025'; }
+    const idSq = PIPE_IDS[sz] * PIPE_IDS[sz];
+    const maxSuction = (4 * idSq) / 0.4085;
+    const maxReturn = (6 * idSq) / 0.4085;
+    let suctionStatus, suctionColor, returnStatus, returnColor;
+    if (v <= 4) { suctionStatus = '✓ Good'; suctionColor = 'var(--green)'; }
+    else if (v <= 6) { suctionStatus = '~ Caution'; suctionColor = '#f9a825'; }
+    else { suctionStatus = '✗ Too fast'; suctionColor = '#d93025'; }
+    if (v <= 6) { returnStatus = '✓ Good'; returnColor = 'var(--green)'; }
+    else if (v <= 8) { returnStatus = '~ Caution'; returnColor = '#f9a825'; }
+    else { returnStatus = '✗ Too fast'; returnColor = '#d93025'; }
     pvHtml += '<tr style="border-bottom:1px solid var(--gray-200);">';
     pvHtml += '<td style="padding:6px 10px;">' + sz + '"</td>';
     pvHtml += '<td style="padding:6px 10px;text-align:right;font-weight:600;">' + v.toFixed(1) + '</td>';
-    pvHtml += '<td style="padding:6px 10px;text-align:right;color:var(--gray-500);">' + maxFlow.toFixed(0) + ' GPM</td>';
-    pvHtml += '<td style="padding:6px 10px;color:' + statusColor + ';font-weight:600;">' + status + '</td>';
+    pvHtml += '<td style="padding:6px 10px;text-align:right;color:var(--gray-500);">' + maxSuction.toFixed(0) + ' GPM</td>';
+    pvHtml += '<td style="padding:6px 10px;text-align:right;color:var(--gray-500);">' + maxReturn.toFixed(0) + ' GPM</td>';
+    pvHtml += '<td style="padding:6px 10px;color:' + suctionColor + ';font-weight:600;">' + suctionStatus + '</td>';
+    pvHtml += '<td style="padding:6px 10px;color:' + returnColor + ';font-weight:600;">' + returnStatus + '</td>';
     pvHtml += '</tr>';
   });
   pvHtml += '</table>';
