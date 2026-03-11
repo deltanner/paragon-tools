@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
-  (function(){
-    var PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
-    if (sessionStorage.getItem('pp_auth') !== PASS_HASH) {
-      window.location.replace('index.html');
-    }
-  })();
+  firebase.initializeApp({
+    apiKey: 'AIzaSyA-Ung2jK8ALtMIfvU2zHhm5kAVl460An4',
+    authDomain: 'toolsbyparagon.firebaseapp.com',
+    projectId: 'toolsbyparagon'
+  });
+  document.documentElement.style.visibility = 'hidden';
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (!user) window.location.replace('index.html');
+    else document.documentElement.style.visibility = '';
+  });
+  function ppSignOut() { firebase.auth().signOut().then(function() { window.location.replace('index.html'); }); }
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -42,6 +49,8 @@
   .topnav .nav-logo { height: 28px; width: auto; }
   .topnav .nav-sep { color: #555; font-size: 18px; }
   .topnav .nav-current { color: var(--gold); font-size: 13px; font-weight: 500; }
+  .topnav .signout-link{margin-left:auto;color:var(--gold);font-size:12px;font-weight:500;text-decoration:none;cursor:pointer;opacity:0.7;transition:opacity 0.2s}
+  .topnav .signout-link:hover{opacity:1}
 
   /* === HERO HEADER === */
   .hero { background: var(--black); padding: 60px 32px 50px; text-align: center; }
@@ -90,6 +99,7 @@
   </a>
   <span class="nav-sep">&#x2f;</span>
   <span class="nav-current">Engineering Tools</span>
+  <a class="signout-link" onclick="ppSignOut()">Sign Out</a>
 </div>
 
 <!-- Hero section -->

@@ -5,6 +5,16 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <title>Paragon Pools — Tools</title>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyA-Ung2jK8ALtMIfvU2zHhm5kAVl460An4",
+    authDomain: "toolsbyparagon.firebaseapp.com",
+    projectId: "toolsbyparagon"
+  });
+</script>
 <style>
   :root {
     --gold: #CC9933;
@@ -57,16 +67,21 @@
     .cat-grid { grid-template-columns: 1fr; }
   }
 
-  /* === PASSWORD GATE === */
+  /* === LOGIN GATE === */
   #gateOverlay{display:none;position:fixed;inset:0;z-index:99999;background:#1a1a1a;align-items:center;justify-content:center}
   .gate-box{background:#2d2d2d;border:1px solid #CC9933;border-radius:12px;padding:40px 36px;text-align:center;max-width:360px;width:90%}
   .gate-box h2{color:#CC9933;font-size:20px;margin-bottom:6px;font-weight:600}
   .gate-box p{color:#999;font-size:13px;margin-bottom:20px}
-  .gate-box input{width:100%;padding:12px 14px;border:1px solid #555;border-radius:8px;background:#1a1a1a;color:white;font-size:16px;text-align:center;letter-spacing:2px;outline:none;box-sizing:border-box}
+  .gate-box input{width:100%;padding:12px 14px;border:1px solid #555;border-radius:8px;background:#1a1a1a;color:white;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px}
   .gate-box input:focus{border-color:#CC9933}
-  .gate-box button{margin-top:14px;width:100%;padding:12px;border:none;border-radius:8px;background:#CC9933;color:#1a1a1a;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s}
+  .gate-box button{width:100%;padding:12px;border:none;border-radius:8px;background:#CC9933;color:#1a1a1a;font-size:15px;font-weight:600;cursor:pointer;transition:background .2s}
   .gate-box button:hover{background:#e6ac39}
+  .gate-box button:disabled{opacity:0.5;cursor:not-allowed}
   #gateError{display:none;color:#d93025;font-size:13px;margin-top:10px}
+  /* === SIGN OUT BUTTON === */
+  .signout-bar{position:fixed;top:12px;right:16px;z-index:100}
+  .signout-btn{background:var(--charcoal);color:var(--gold);border:1px solid var(--gold);border-radius:6px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s;display:none}
+  .signout-btn:hover{background:var(--gold);color:var(--black)}
 </style>
 </head>
 <body>
@@ -74,13 +89,15 @@
 <div id="gateOverlay" style="display:flex">
   <div class="gate-box">
     <h2>Paragon Tools</h2>
-    <p>Enter the team password to continue</p>
-    <input type="password" id="gateInput" placeholder="Password" onkeydown="if(event.key==='Enter')tryPassword()" autofocus>
-    <button onclick="tryPassword()">Enter</button>
-    <div id="gateError">Incorrect password. Try again.</div>
+    <p>Sign in with your email and password</p>
+    <input type="email" id="gateEmail" placeholder="Email" onkeydown="if(event.key==='Enter')document.getElementById('gatePass').focus()" autofocus>
+    <input type="password" id="gatePass" placeholder="Password" onkeydown="if(event.key==='Enter')tryLogin()">
+    <button id="gateBtn" onclick="tryLogin()">Sign In</button>
+    <div id="gateError"></div>
   </div>
 </div>
 
+<div class="signout-bar"><button id="signoutBtn" class="signout-btn" onclick="signOut()">Sign Out</button></div>
 
 <!-- Hero section -->
 <div class="hero">
@@ -173,29 +190,45 @@
 
 
 <script>
-  const PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
-  async function sha256(str) {
-    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+  function tryLogin() {
+    const email = document.getElementById('gateEmail').value.trim();
+    const pass = document.getElementById('gatePass').value;
+    const btn = document.getElementById('gateBtn');
+    const err = document.getElementById('gateError');
+    if (!email || !pass) { err.textContent = 'Enter your email and password.'; err.style.display = 'block'; return; }
+    btn.disabled = true;
+    btn.textContent = 'Signing in…';
+    err.style.display = 'none';
+    firebase.auth().signInWithEmailAndPassword(email, pass)
+      .then(() => { /* onAuthStateChanged handles the rest */ })
+      .catch(e => {
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+        if (e.code === 'auth/user-not-found' || e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+          err.textContent = 'Invalid email or password.';
+        } else if (e.code === 'auth/user-disabled') {
+          err.textContent = 'This account has been disabled. Contact Del.';
+        } else if (e.code === 'auth/too-many-requests') {
+          err.textContent = 'Too many attempts. Try again later.';
+        } else {
+          err.textContent = 'Sign-in error: ' + e.message;
+        }
+        err.style.display = 'block';
+      });
   }
-  async function tryPassword() {
-    const inp = document.getElementById('gateInput');
-    const hash = await sha256(inp.value.trim());
-    if (hash === PASS_HASH) {
-      sessionStorage.setItem('pp_auth', PASS_HASH);
+  function signOut() {
+    firebase.auth().signOut();
+  }
+  // Listen for auth state changes
+  firebase.auth().onAuthStateChanged(user => {
+    if (user) {
       document.getElementById('gateOverlay').style.display = 'none';
+      document.getElementById('signoutBtn').style.display = '';
     } else {
-      const err = document.getElementById('gateError');
-      err.style.display = 'block';
-      inp.value = '';
-      inp.focus();
-      setTimeout(() => err.style.display = 'none', 2000);
+      document.getElementById('gateOverlay').style.display = 'flex';
+      document.getElementById('signoutBtn').style.display = 'none';
     }
-  }
-  // Check if already authenticated
-  if (sessionStorage.getItem('pp_auth') === PASS_HASH) {
-    document.getElementById('gateOverlay').style.display = 'none';
-  }
+  });
 </script>
 
 </body>

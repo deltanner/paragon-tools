@@ -1,14 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-  (function(){
-    var PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
-    if (sessionStorage.getItem('pp_auth') !== PASS_HASH) {
-      window.location.replace('index.html');
-    }
-  })();
-</script>
+<script>document.documentElement.style.visibility='hidden';</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
@@ -17,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
   firebase.initializeApp({
@@ -29,6 +23,11 @@
     appId: "1:204324649539:web:35c834ad63c90a5292b2f6"
   });
   const fbDb = firebase.database();
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (!user) window.location.replace('index.html');
+    else document.documentElement.style.visibility = '';
+  });
+  function ppSignOut() { firebase.auth().signOut().then(function() { window.location.replace('index.html'); }); }
 </script>
 <style>
   :root {
@@ -66,6 +65,8 @@
   .topnav .nav-logo { height: 28px; width: auto; }
   .topnav .nav-sep { color: #555; font-size: 18px; }
   .topnav .nav-current { color: var(--gold); font-size: 13px; font-weight: 500; }
+  .topnav .signout-link{margin-left:auto;color:var(--gold);font-size:12px;font-weight:500;text-decoration:none;cursor:pointer;opacity:0.7;transition:opacity 0.2s}
+  .topnav .signout-link:hover{opacity:1}
 
   /* === HEADER === */
   .header { background: var(--black); color: white; padding: 20px 32px; display: flex; align-items: center; gap: 20px; }
@@ -262,6 +263,7 @@
   <span class="nav-current">Quote Builder</span>
   <span style="flex:1"></span>
   <span class="cloud-badge synced" id="cloudBadge">&#9729; Cloud</span>
+  <a class="signout-link" onclick="ppSignOut()">Sign Out</a>
 </nav>
 
 <!-- Tab Bar -->

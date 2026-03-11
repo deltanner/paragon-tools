@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script>
-  (function(){
-    var PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
-    if (sessionStorage.getItem('pp_auth') !== PASS_HASH) {
-      window.location.replace('index.html');
-    }
-  })();
+  firebase.initializeApp({
+    apiKey: 'AIzaSyA-Ung2jK8ALtMIfvU2zHhm5kAVl460An4',
+    authDomain: 'toolsbyparagon.firebaseapp.com',
+    projectId: 'toolsbyparagon'
+  });
+  document.documentElement.style.visibility = 'hidden';
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (!user) window.location.replace('index.html');
+    else document.documentElement.style.visibility = '';
+  });
+  function ppSignOut() { firebase.auth().signOut().then(function() { window.location.replace('index.html'); }); }
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -50,6 +57,8 @@
   .topnav .tn-crumbs a{color:#aaa;text-decoration:none}
   .topnav .tn-crumbs a:hover{color:var(--gold)}
   .topnav .tn-crumbs span{color:#fff}
+  .topnav .signout-link{margin-left:auto;color:var(--gold);font-size:12px;font-weight:500;text-decoration:none;cursor:pointer;opacity:0.7;transition:opacity 0.2s}
+  .topnav .signout-link:hover{opacity:1}
 
   .header{background:var(--black);color:white;padding:20px 32px;display:flex;align-items:center;gap:20px}
   .header-logo{height:60px;width:auto}
@@ -138,6 +147,7 @@
   <span class="tn-sep"></span>
   <div class="tn-crumbs">
     <a href="engineering-tools.html">Engineering Tools</a><span>/</span><span>Weir & Vanishing Edge Calculator</span>
+  <a class="signout-link" onclick="ppSignOut()">Sign Out</a>
   </div>
 </nav>
 

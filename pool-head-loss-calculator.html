@@ -1,20 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-  (function(){
-    var PASS_HASH = 'df3aa2293718fdf85b6ae2502defb970d6cf2a1a698451e1eca96349b5b9e5d2';
-    if (sessionStorage.getItem('pp_auth') !== PASS_HASH) {
-      window.location.replace('index.html');
-    }
-  })();
-</script>
+<script>document.documentElement.style.visibility='hidden';</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <title>Paragon Pools — Head Loss Calculator</title>
 <!-- Firebase SDK (compat mode for simple script-tag usage) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <script>
   firebase.initializeApp({
@@ -27,6 +21,11 @@
     appId: "1:204324649539:web:35c834ad63c90a5292b2f6"
   });
   const fbDb = firebase.database();
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (!user) window.location.replace('index.html');
+    else document.documentElement.style.visibility = '';
+  });
+  function ppSignOut() { firebase.auth().signOut().then(function() { window.location.replace('index.html'); }); }
 </script>
 <style>
   :root {
@@ -129,6 +128,8 @@
   .topnav .nav-logo { height: 28px; width: auto; flex-shrink: 0; }
   .topnav .nav-sep { color: #555; font-size: 18px; flex-shrink: 0; }
   .topnav .nav-current { color: var(--gold); font-size: 13px; font-weight: 500; white-space: nowrap; }
+  .topnav .signout-link{margin-left:auto;color:var(--gold);font-size:12px;font-weight:500;text-decoration:none;cursor:pointer;opacity:0.7;transition:opacity 0.2s}
+  .topnav .signout-link:hover{opacity:1}
   /* === POOL NAME / SAVE BAR === */
   .pool-bar { background: white; border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px; padding: 16px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .pool-bar .pool-name-field { flex: 1; min-width: 200px; }
@@ -188,6 +189,7 @@
   <a class="nav-home" href="engineering-tools.html" style="font-weight:500;font-size:13px;">Engineering</a>
   <span class="nav-sep">/</span>
   <span class="nav-current">Head Loss Calculator</span>
+  <a class="signout-link" onclick="ppSignOut()">Sign Out</a>
 </nav>
 
 <!-- Password Gate -->
