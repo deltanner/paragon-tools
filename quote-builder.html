@@ -588,6 +588,10 @@
           <input type="number" id="equipmentOverride" placeholder="Leave blank to auto-calculate" oninput="recalc()">
           <div class="hint">Enter Heritage Plus quote total to override auto-calc from unit costs</div>
         </div>
+        <div class="field"><label>Auxiliary Pumps</label>
+          <input type="number" id="auxPumpCount" placeholder="Auto" min="0" max="10" oninput="recalc()">
+          <div class="hint">Auto: 1 per spa + 1 per water feature. Override if build needs more.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1089,7 +1093,11 @@ function recalc() {
     lines.push({ id: 'equip_package', cat: 'Equipment', item: 'Equipment Package (Heritage Quote)', cost: equipOverride, marginCat: 'equip' });
   } else {
     lines.push({ id: 'equip_mainpump', cat: 'Equipment', item: 'Main Pump (3HP VS)', cost: s('mainPump'), marginCat: 'equip' });
-    if (ch('optWaterFeature')) lines.push({ id: 'equip_featurepump', cat: 'Equipment', item: 'Feature Pump (1.5HP)', cost: s('featurePump'), marginCat: 'equip' });
+    // Aux pumps: auto = 1 per spa + 1 per water feature, or manual override
+    const auxPumpAuto = (spaActive ? 1 : 0) + (ch('optWaterFeature') ? 1 : 0);
+    const auxPumpOverride = document.getElementById('auxPumpCount').value;
+    const auxPumpCount = auxPumpOverride !== '' ? parseInt(auxPumpOverride) || 0 : auxPumpAuto;
+    if (auxPumpCount > 0) lines.push({ id: 'equip_auxpumps', cat: 'Equipment', item: 'Auxiliary Pumps (\u00d7' + auxPumpCount + ')', cost: auxPumpCount * s('featurePump'), marginCat: 'equip' });
     lines.push({ id: 'equip_filter', cat: 'Equipment', item: 'Filter (Cartridge)', cost: s('filter'), marginCat: 'equip' });
     if (spaActive) {
       lines.push({ id: 'equip_heater', cat: 'Equipment', item: 'Heater (400k BTU)', cost: s('heater'), marginCat: 'equip' });
@@ -1654,6 +1662,7 @@ function getQuoteData() {
     options: {},
     margin: v('marginSlider'),
     equipmentOverride: v('equipmentOverride'),
+    auxPumpCount: document.getElementById('auxPumpCount').value,
     savedAt: new Date().toISOString()
   };
   // Gather dims
@@ -1723,6 +1732,7 @@ function loadQuoteData(data) {
   }
   if (data.margin) document.getElementById('marginSlider').value = data.margin;
   if (data.equipmentOverride) document.getElementById('equipmentOverride').value = data.equipmentOverride;
+  if (data.auxPumpCount !== undefined && data.auxPumpCount !== '') document.getElementById('auxPumpCount').value = data.auxPumpCount;
   // Restore per-quote cost overrides
   window.costOverrides = data.costOverrides ? { ...data.costOverrides } : {};
   updateMargin();
