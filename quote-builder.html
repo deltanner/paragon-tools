@@ -214,6 +214,7 @@
   .settings-row input { width: 110px; padding: 6px 10px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
   .settings-row input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 2px rgba(204,153,51,0.2); }
   .settings-note { font-size: 11px; color: var(--gray-600); padding: 8px 0 4px; font-style: italic; }
+  .depth-surcharge-input { width: 70px; margin-left: 8px; }
 
   /* Cloud sync badge */
   .cloud-badge { font-size: 11px; padding: 3px 10px; border-radius: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
@@ -458,11 +459,6 @@
               <option value="0">None</option><option value="1">1</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option>
             </select>
           </div>
-          <div class="field-med"><label>Raised Wall Required</label>
-            <select id="raisedWall" onchange="recalc()">
-              <option value="0">No</option><option value="1" selected>Yes</option>
-            </select>
-          </div>
         </div>
       </div>
 
@@ -482,15 +478,6 @@
           <div class="toggle-sub">IntelliCenter or similar — auto-enabled if salt chlorinator selected</div>
         </div>
         <div class="toggle-switch"><input type="checkbox" id="optAutomation" onchange="recalc()"><span class="toggle-track"></span></div>
-      </div>
-
-      <!-- In-Floor Cleaning -->
-      <div class="toggle-row" onclick="toggleSwitch('optInFloor')">
-        <div>
-          <div class="toggle-label">In-Floor Cleaning System</div>
-          <div class="toggle-sub">IFCS hardware kit + in-floor labor</div>
-        </div>
-        <div class="toggle-switch"><input type="checkbox" id="optInFloor" onchange="recalc()"><span class="toggle-track"></span></div>
       </div>
 
       <!-- Auto Cover -->
@@ -539,6 +526,29 @@
         </div>
       </div>
 
+      <!-- Interior Finish -->
+      <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--gray-200);">
+        <div class="row">
+          <div class="field"><label>Interior Finish</label>
+            <select id="finishType" onchange="recalc()">
+              <option value="marble">Marble Plaster ($50/lf)</option>
+              <option value="quartz3">3-Bag Quartz ($60/lf)</option>
+              <option value="quartz6">6-Bag Quartz ($65/lf)</option>
+              <option value="pebblequartz">PebbleQuartz ($70/lf)</option>
+              <option value="sheencat1">Pebble Sheen Cat 1 ($95/lf)</option>
+              <option value="sheencat2">Pebble Sheen Cat 2 ($100/lf)</option>
+              <option value="finacat1">PebbleFina Cat 1 ($95/lf)</option>
+              <option value="finacat2">PebbleFina Cat 2 ($100/lf)</option>
+              <option value="essence">PebbleEssence ($125/lf)</option>
+              <option value="breeze">PebbleBreeze ($175/lf)</option>
+            </select>
+          </div>
+        </div>
+        <div class="toggle-row"><label><input type="checkbox" id="optPlasterDye" onchange="recalc()"> Plaster Dye</label></div>
+        <div class="toggle-row"><label><input type="checkbox" id="optGlassSeeding" onchange="recalc()"> Glass Seeding</label></div>
+        <div class="toggle-row"><label><input type="checkbox" id="optAbalone" onchange="recalc()"> Abalone Seeding</label></div>
+      </div>
+
       <!-- Decking -->
       <div class="row">
         <div class="field"><label>Decking Type</label>
@@ -569,15 +579,6 @@
             <div class="hint">Total square footage of veneer on planter faces</div>
           </div>
         </div>
-      </div>
-
-      <!-- Boulders -->
-      <div class="toggle-row" onclick="toggleSwitch('optBoulders')">
-        <div>
-          <div class="toggle-label">Integrated Boulder Package</div>
-          <div class="toggle-sub">Natural boulder placement around pool</div>
-        </div>
-        <div class="toggle-switch"><input type="checkbox" id="optBoulders" onchange="recalc()"><span class="toggle-track"></span></div>
       </div>
 
     </div>
@@ -723,7 +724,7 @@
     <div class="sc-body">
       <div class="settings-row"><span class="sr-label">Rebar (per linear foot)</span><input type="number" id="set_rebarPerLF" value="41" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
       <div class="settings-row"><span class="sr-label">Shotcrete (labor + material)</span><input type="number" id="set_shotcretePerCY" value="300" step="5" onchange="saveSettings()"><span class="sr-unit">$/cy</span></div>
-      <div class="settings-row"><span class="sr-label">Detail &amp; strip forms</span><input type="number" id="set_detailForms" value="1200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Detail &amp; strip forms</span><input type="number" id="set_detailForms" value="300" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
       <div class="settings-row"><span class="sr-label">Watering labor</span><input type="number" id="set_wateringLabor" value="0" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
       <div class="settings-row"><span class="sr-label">Miracote densifier</span><input type="number" id="set_miracote" value="1500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
     </div>
@@ -733,12 +734,11 @@
   <div class="settings-card">
     <div class="sc-header"><span class="sc-icon">&#128295;</span><h3>3. Plumbing</h3></div>
     <div class="sc-body">
-      <div class="settings-row"><span class="sr-label">Underground plumbing (base)</span><input type="number" id="set_plumbBase" value="4000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">In-floor cleaning labor</span><input type="number" id="set_infloorLabor" value="2500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">IFCS hardware kit</span><input type="number" id="set_ifcsKit" value="3500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Sheer descent set labor (each)</span><input type="number" id="set_sheerLabor" value="350" onchange="saveSettings()"><span class="sr-unit">each</span></div>
-      <div class="settings-row"><span class="sr-label">Sheer descent fixture (each)</span><input type="number" id="set_sheerFixture" value="450" onchange="saveSettings()"><span class="sr-unit">each</span></div>
-      <div class="settings-row"><span class="sr-label">Finish hardware (drains, fittings)</span><input type="number" id="set_finishHardware" value="800" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Underground plumbing (base)</span><input type="number" id="set_plumbBase" value="2400" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Spa plumbing add-on</span><input type="number" id="set_plumbSpa" value="2000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Sheer descent set labor (each)</span><input type="number" id="set_sheerLabor" value="100" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Sheer descent fixture (each)</span><input type="number" id="set_sheerFixture" value="0" onchange="saveSettings()"><span class="sr-unit">each</span></div>
+      <div class="settings-row"><span class="sr-label">Finish hardware (drains, fittings)</span><input type="number" id="set_finishHardware" value="0" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
     </div>
   </div>
 
@@ -757,9 +757,9 @@
       <div class="settings-row"><span class="sr-label">Transformer</span><input type="number" id="set_transformer" value="150" onchange="saveSettings()"><span class="sr-unit">each</span></div>
       <div class="settings-row"><span class="sr-label">3-way valve / actuator</span><input type="number" id="set_valve" value="350" onchange="saveSettings()"><span class="sr-unit">each</span></div>
       <div class="settings-row"><span class="sr-label">2-way valve</span><input type="number" id="set_valve2way" value="250" onchange="saveSettings()"><span class="sr-unit">each</span></div>
-      <div class="settings-row"><span class="sr-label">Electrical labor</span><input type="number" id="set_electricalLabor" value="5000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Gas line sub</span><input type="number" id="set_gasLine" value="1200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Conduit / wire material</span><input type="number" id="set_conduitPerFt" value="8" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/ft</span></div>
+      <div class="settings-row"><span class="sr-label">Electrical labor</span><input type="number" id="set_electricalLabor" value="2200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Gas line — 3/4 in base (up to 20 ft)</span><input type="number" id="set_gasLine" value="650" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Conduit / wire material</span><input type="number" id="set_conduitPerFt" value="3.50" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/ft</span></div>
     </div>
   </div>
 
@@ -767,22 +767,22 @@
   <div class="settings-card">
     <div class="sc-header"><span class="sc-icon">&#9638;</span><h3>5. Tile &amp; Coping</h3></div>
     <div class="sc-body">
-      <div class="settings-row"><span class="sr-label">Basecrete waterproofing</span><input type="number" id="set_basecrete" value="1800" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Basecrete waterproofing</span><input type="number" id="set_basecrete" value="3" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
       <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Waterline Tile</span></div>
-      <div class="settings-row"><span class="sr-label">Waterline tile material</span><input type="number" id="set_waterlineTileMat" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
-      <div class="settings-row"><span class="sr-label">Waterline tile labor</span><input type="number" id="set_waterlineTileLabor" value="14" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Waterline tile material</span><input type="number" id="set_waterlineTileMat" value="15" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Waterline tile labor</span><input type="number" id="set_waterlineTileLabor" value="15" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
       <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Other Tile (dam wall, spillover, etc.)</span></div>
-      <div class="settings-row"><span class="sr-label">Other tile material</span><input type="number" id="set_otherTileMat" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
-      <div class="settings-row"><span class="sr-label">Other tile labor</span><input type="number" id="set_otherTileLabor" value="12" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Other tile material</span><input type="number" id="set_otherTileMat" value="15" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Other tile labor</span><input type="number" id="set_otherTileLabor" value="15" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
       <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Veneer (spa, planter, stone, etc.)</span></div>
       <div class="settings-row"><span class="sr-label">Veneer material</span><input type="number" id="set_veneerMat" value="22" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
-      <div class="settings-row"><span class="sr-label">Veneer installation</span><input type="number" id="set_veneerLabor" value="15" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
+      <div class="settings-row"><span class="sr-label">Veneer installation</span><input type="number" id="set_veneerLabor" value="30" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/sqft</span></div>
       <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Coping</span></div>
-      <div class="settings-row"><span class="sr-label">Pour-in-place coping</span><input type="number" id="set_copingPIP" value="22" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Pour-in-place coping</span><input type="number" id="set_copingPIP" value="40" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
       <div class="settings-row"><span class="sr-label">Stone/paver coping material</span><input type="number" id="set_copingStoneMat" value="25" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
-      <div class="settings-row"><span class="sr-label">Stone/paver coping install</span><input type="number" id="set_copingStoneLabor" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Stone/paver coping install</span><input type="number" id="set_copingStoneLabor" value="16" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
       <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Cover Vault Lid</span></div>
-      <div class="settings-row"><span class="sr-label">Vault lid — pour-in-place</span><input type="number" id="set_vaultLidPIP" value="22" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Vault lid — pour-in-place</span><input type="number" id="set_vaultLidPIP" value="50" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
       <div class="settings-row"><span class="sr-label">Vault lid — stone material</span><input type="number" id="set_vaultLidStoneMat" value="25" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
       <div class="settings-row"><span class="sr-label">Vault lid — stone install</span><input type="number" id="set_vaultLidStoneLabor" value="18" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
     </div>
@@ -802,12 +802,30 @@
   <div class="settings-card">
     <div class="sc-header"><span class="sc-icon">&#9733;</span><h3>Other</h3></div>
     <div class="sc-body">
-      <div class="settings-row"><span class="sr-label">Auto cover (Cover Care)</span><input type="number" id="set_autoCover" value="18000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Interior finish (per lf of perimeter)</span><input type="number" id="set_interiorPerLF" value="45" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
-      <div class="settings-row"><span class="sr-label">Depth surcharge (per ft over 6')</span><input type="number" id="set_interiorDepthSurcharge" value="600" step="50" onchange="saveSettings()"><span class="sr-unit">$/ft</span></div>
-      <div class="settings-row"><span class="sr-label">Boulder package</span><input type="number" id="set_boulders" value="1200" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Auto cover (Cover Care)</span><input type="number" id="set_autoCover" value="11000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
       <div class="settings-row"><span class="sr-label">Startup &amp; pool prep</span><input type="number" id="set_startup" value="2000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
-      <div class="settings-row"><span class="sr-label">Raised wall (structural + veneer)</span><input type="number" id="set_raisedWall" value="8000" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+    </div>
+  </div>
+
+  <!-- Interior Finish -->
+  <div class="settings-card">
+    <div class="sc-header"><span class="sc-icon">&#9672;</span><h3>Interior Finish</h3></div>
+    <div class="sc-body">
+      <div class="settings-note">Costs per linear foot of perimeter. Depth surcharge applies per foot of depth over 6'.</div>
+      <div class="settings-row"><span class="sr-label">Marble Plaster</span><input type="number" id="set_finish_marble" value="50" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span><input type="number" id="set_finishDepth_marble" value="400" class="depth-surcharge-input" onchange="saveSettings()"><span class="sr-unit">$/ft &gt;6'</span></div>
+      <div class="settings-row"><span class="sr-label">3-Bag Quartz</span><input type="number" id="set_finish_quartz3" value="60" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span><input type="number" id="set_finishDepth_quartz3" value="500" class="depth-surcharge-input" onchange="saveSettings()"><span class="sr-unit">$/ft &gt;6'</span></div>
+      <div class="settings-row"><span class="sr-label">6-Bag Quartz</span><input type="number" id="set_finish_quartz6" value="65" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span><input type="number" id="set_finishDepth_quartz6" value="550" class="depth-surcharge-input" onchange="saveSettings()"><span class="sr-unit">$/ft &gt;6'</span></div>
+      <div class="settings-row"><span class="sr-label">PebbleQuartz</span><input type="number" id="set_finish_pebblequartz" value="70" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span><input type="number" id="set_finishDepth_pebblequartz" value="600" class="depth-surcharge-input" onchange="saveSettings()"><span class="sr-unit">$/ft &gt;6'</span></div>
+      <div class="settings-row"><span class="sr-label">Pebble Sheen Cat 1</span><input type="number" id="set_finish_sheencat1" value="95" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span><input type="number" id="set_finishDepth_sheencat1" value="800" class="depth-surcharge-input" onchange="saveSettings()"><span class="sr-unit">$/ft &gt;6'</span></div>
+      <div class="settings-row"><span class="sr-label">Pebble Sheen Cat 2</span><input type="number" id="set_finish_sheencat2" value="100" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span><input type="number" id="set_finishDepth_sheencat2" value="800" class="depth-surcharge-input" onchange="saveSettings()"><span class="sr-unit">$/ft &gt;6'</span></div>
+      <div class="settings-row"><span class="sr-label">PebbleFina Cat 1</span><input type="number" id="set_finish_finacat1" value="95" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span><input type="number" id="set_finishDepth_finacat1" value="800" class="depth-surcharge-input" onchange="saveSettings()"><span class="sr-unit">$/ft &gt;6'</span></div>
+      <div class="settings-row"><span class="sr-label">PebbleFina Cat 2</span><input type="number" id="set_finish_finacat2" value="100" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span><input type="number" id="set_finishDepth_finacat2" value="800" class="depth-surcharge-input" onchange="saveSettings()"><span class="sr-unit">$/ft &gt;6'</span></div>
+      <div class="settings-row"><span class="sr-label">PebbleEssence</span><input type="number" id="set_finish_essence" value="125" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span><input type="number" id="set_finishDepth_essence" value="800" class="depth-surcharge-input" onchange="saveSettings()"><span class="sr-unit">$/ft &gt;6'</span></div>
+      <div class="settings-row"><span class="sr-label">PebbleBreeze</span><input type="number" id="set_finish_breeze" value="175" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span><input type="number" id="set_finishDepth_breeze" value="800" class="depth-surcharge-input" onchange="saveSettings()"><span class="sr-unit">$/ft &gt;6'</span></div>
+      <div class="settings-row" style="border-top:1px solid var(--gray-200);padding-top:8px;margin-top:4px"><span class="sr-label" style="font-weight:600">Enhancements</span></div>
+      <div class="settings-row"><span class="sr-label">Plaster Dye</span><input type="number" id="set_finish_dye" value="7.50" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
+      <div class="settings-row"><span class="sr-label">Glass Seeding</span><input type="number" id="set_finish_glass" value="500" onchange="saveSettings()"><span class="sr-unit">flat</span></div>
+      <div class="settings-row"><span class="sr-label">Abalone Seeding</span><input type="number" id="set_finish_abalone" value="7.50" step="0.5" onchange="saveSettings()"><span class="sr-unit">$/lf</span></div>
     </div>
   </div>
 
@@ -1059,9 +1077,6 @@ function recalc() {
   // Sheer descent count
   const sheerCount = ch('optWaterFeature') ? parseInt(document.getElementById('sheerCount').value) || 0 : 0;
 
-  // 2-way valves: needed if raised wall, one per sheer descent
-  const hasRaisedWall = ch('optWaterFeature') && parseInt(document.getElementById('raisedWall').value) === 1;
-  const valve2wayCount = hasRaisedWall ? sheerCount : 0;
 
   // ---- Build line items ----
   const lines = [];
@@ -1084,16 +1099,14 @@ function recalc() {
   lines.push({ id: 'shell_miracote', cat: 'Shell', item: 'Miracote Densifier', cost: s('miracote') });
 
   // 3. Plumbing
-  lines.push({ id: 'plumb_base', cat: 'Plumbing', item: 'Underground Plumbing', cost: s('plumbBase') });
-  if (ch('optInFloor')) {
-    lines.push({ id: 'plumb_infloor', cat: 'Plumbing', item: 'In-Floor Cleaning Labor', cost: s('infloorLabor') });
-    lines.push({ id: 'plumb_ifcs', cat: 'Plumbing', item: 'IFCS Hardware Kit', cost: s('ifcsKit') });
+  lines.push({ id: 'plumb_base', cat: 'Plumbing', item: 'Underground Plumbing — Base Pool', cost: s('plumbBase') });
+  if (spaActive) {
+    lines.push({ id: 'plumb_spa', cat: 'Plumbing', item: 'Underground Plumbing — Spa Add-On', cost: s('plumbSpa') });
   }
   if (sheerCount > 0) {
     lines.push({ id: 'plumb_sheerlabor', cat: 'Plumbing', item: 'Sheer Set Labor (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerLabor') });
     lines.push({ id: 'plumb_sheerfixtures', cat: 'Plumbing', item: 'Sheer Fixtures (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerFixture'), marginCat: 'equip' });
   }
-  lines.push({ id: 'plumb_finishhw', cat: 'Plumbing', item: 'Finish Hardware', cost: s('finishHardware') });
 
   // 4. Equipment
   const equipOverride = v('equipmentOverride');
@@ -1113,7 +1126,7 @@ function recalc() {
     if (ch('optSalt')) lines.push({ id: 'equip_salt', cat: 'Equipment', item: 'Salt Chlorinator', cost: s('saltCell'), marginCat: 'equip' });
     if (ch('optAutomation')) lines.push({ id: 'equip_automation', cat: 'Equipment', item: 'Automation / IntelliCenter', cost: s('automation'), marginCat: 'equip' });
     if (valveCount > 0) lines.push({ id: 'equip_valve3way', cat: 'Equipment', item: '3-Way Valves/Actuators (\u00d7' + valveCount + ')', cost: valveCount * s('valve'), marginCat: 'equip' });
-    if (valve2wayCount > 0) lines.push({ id: 'equip_valve2way', cat: 'Equipment', item: '2-Way Valves (\u00d7' + valve2wayCount + ')', cost: valve2wayCount * s('valve2way'), marginCat: 'equip' });
+    if (sheerCount > 0) lines.push({ id: 'equip_valve2way', cat: 'Equipment', item: '2-Way Valves (\u00d7' + sheerCount + ')', cost: sheerCount * s('valve2way'), marginCat: 'equip' });
   }
   if (lightCount > 0) {
     lines.push({ id: 'equip_lights', cat: 'Equipment', item: 'MicroBrite Lights (\u00d7' + lightCount + ')', cost: lightCount * s('lightEach'), marginCat: 'equip' });
@@ -1124,7 +1137,12 @@ function recalc() {
   if (conduitFt > 0) lines.push({ id: 'equip_conduit', cat: 'Equipment', item: 'Conduit/Wire (' + Math.round(conduitFt) + ' ft)', cost: conduitFt * s('conduitPerFt') });
 
   // 5. Tile & Coping
-  lines.push({ id: 'tile_basecrete', cat: 'Tile/Coping', item: 'Basecrete Waterproofing', cost: s('basecrete') });
+  const basecreteSqft = area + (spaActive ? Math.round(allSpaPerim * ((v('depthShallow') + v('depthDeep')) / 2)) : 0);
+  if (basecreteSqft > 0) {
+    lines.push({ id: 'tile_basecrete', cat: 'Tile/Coping', item: 'Basecrete Waterproofing (' + basecreteSqft + ' sqft)', cost: basecreteSqft * s('basecrete') });
+  } else {
+    lines.push({ id: 'tile_basecrete', cat: 'Tile/Coping', item: 'Basecrete Waterproofing', cost: 0 });
+  }
 
   // Waterline tile: auto-calc LF from pool perimeter + dam walls (internal spa + cover vault)
   let waterlineLF = perimeter;
@@ -1217,25 +1235,36 @@ function recalc() {
     }
   }
 
-  // 8. Interior — based on pool + spa perimeter LF, with depth surcharge over 6'
+  // 8. Interior — finish type drives cost per LF and depth surcharge
   const interiorLF = perimeter + allSpaPerim;
+  const finishType = document.getElementById('finishType').value;
+  const finishNames = {
+    marble: 'Marble Plaster', quartz3: '3-Bag Quartz', quartz6: '6-Bag Quartz',
+    pebblequartz: 'PebbleQuartz', sheencat1: 'Pebble Sheen Cat 1', sheencat2: 'Pebble Sheen Cat 2',
+    finacat1: 'PebbleFina Cat 1', finacat2: 'PebbleFina Cat 2', essence: 'PebbleEssence', breeze: 'PebbleBreeze'
+  };
+  const finishName = finishNames[finishType] || 'Interior Finish';
+  const finishCostPerLF = s('finish_' + finishType);
+  const finishDepthSurcharge = s('finishDepth_' + finishType);
   if (interiorLF > 0) {
-    lines.push({ id: 'interior_finish', cat: 'Interior', item: 'Interior Finish (' + interiorLF + ' lf)', cost: interiorLF * s('interiorPerLF') });
+    lines.push({ id: 'interior_finish', cat: 'Interior', item: finishName + ' (' + interiorLF + ' lf)', cost: interiorLF * finishCostPerLF });
   }
   const deepFt = Math.max(0, (v('depthDeep') || 0) - 6);
-  if (deepFt > 0) {
-    lines.push({ id: 'interior_depth', cat: 'Interior', item: 'Depth Surcharge (' + deepFt + ' ft over 6\')', cost: deepFt * s('interiorDepthSurcharge') });
+  if (deepFt > 0 && finishDepthSurcharge > 0) {
+    lines.push({ id: 'interior_depth', cat: 'Interior', item: 'Depth Surcharge — ' + finishName + ' (' + deepFt + ' ft over 6\')', cost: deepFt * finishDepthSurcharge });
+  }
+  // Finish enhancements
+  if (ch('optPlasterDye') && interiorLF > 0) {
+    lines.push({ id: 'interior_dye', cat: 'Interior', item: 'Plaster Dye (' + interiorLF + ' lf)', cost: interiorLF * s('finish_dye') });
+  }
+  if (ch('optGlassSeeding')) {
+    lines.push({ id: 'interior_glass', cat: 'Interior', item: 'Glass Seeding', cost: s('finish_glass') });
+  }
+  if (ch('optAbalone') && interiorLF > 0) {
+    lines.push({ id: 'interior_abalone', cat: 'Interior', item: 'Abalone Seeding (' + interiorLF + ' lf)', cost: interiorLF * s('finish_abalone') });
   }
 
-  // 9. Boulders
-  if (ch('optBoulders')) lines.push({ id: 'other_boulders', cat: 'Other', item: 'Integrated Boulder Package', cost: s('boulders') });
-
-  // Raised Wall
-  if (ch('optWaterFeature') && parseInt(document.getElementById('raisedWall').value) === 1) {
-    lines.push({ id: 'other_raisedwall', cat: 'Other', item: 'Raised Wall (Structural + Veneer)', cost: s('raisedWall') });
-  }
-
-  // 10. Startup
+  // 9. Startup
   lines.push({ id: 'startup_prep', cat: 'Prep/Startup', item: 'Startup & Pool Prep', cost: s('startup') });
 
   // ---- Calculate totals with margin ----
@@ -1684,10 +1713,10 @@ function getQuoteData() {
     data.spaDims[id] = document.getElementById(id)?.value || '';
   });
   // Gather options
-  ['optWaterFeature','optSalt','optAutomation','optInFloor','optAutoCover','optPlanter','optBoulders'].forEach(id => {
+  ['optWaterFeature','optSalt','optAutomation','optAutoCover','optPlanter','optPlasterDye','optGlassSeeding','optAbalone'].forEach(id => {
     data.options[id] = document.getElementById(id)?.checked || false;
   });
-  ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft','planterSqft','vaultLength','vaultWidth','vaultLidType'].forEach(id => {
+  ['sheerCount','copingType','copingStoneLF','deckingType','deckSqft','planterSqft','vaultLength','vaultWidth','vaultLidType','finishType'].forEach(id => {
     data.options[id] = document.getElementById(id)?.value || '';
   });
   // Save per-quote cost overrides
@@ -1729,11 +1758,11 @@ function loadQuoteData(data) {
   }
   // Options
   if (data.options) {
-    ['optWaterFeature','optSalt','optAutomation','optInFloor','optAutoCover','optPlanter','optBoulders'].forEach(id => {
+    ['optWaterFeature','optSalt','optAutomation','optAutoCover','optPlanter','optPlasterDye','optGlassSeeding','optAbalone'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.checked = !!data.options[id];
     });
-    ['sheerCount','raisedWall','copingType','copingStoneLF','deckingType','deckSqft','planterSqft','vaultLength','vaultWidth','vaultLidType'].forEach(id => {
+    ['sheerCount','copingType','copingStoneLF','deckingType','deckSqft','planterSqft','vaultLength','vaultWidth','vaultLidType','finishType'].forEach(id => {
       const el = document.getElementById(id);
       if (el && data.options[id] !== undefined) el.value = data.options[id];
     });
