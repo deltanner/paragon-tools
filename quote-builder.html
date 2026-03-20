@@ -346,11 +346,12 @@
           <div class="field"><label>Spa / Hot Tub</label>
             <select id="spaConfig" onchange="recalc()">
               <option value="none">No Spa</option>
-              <option value="internal">Internal (dam wall, inside pool shell)</option>
+              <option value="internal_grade">Internal — On Grade</option>
+              <option value="internal_raised">Internal — Raised</option>
               <option value="external_grade">External — On Grade</option>
               <option value="external_raised">External — Raised</option>
             </select>
-            <div class="hint">Internal: spa carved into pool shell with dam wall. External: separate spa vessel.</div>
+            <div class="hint">Internal: spa carved into pool shell with dam wall. On Grade = flush (no raised dam wall height). Raised = dam wall above grade. External: separate spa vessel.</div>
           </div>
         </div>
         <!-- Internal spa fields -->
@@ -950,7 +951,7 @@ function hasSpa() {
   return document.getElementById('spaConfig').value !== 'none';
 }
 function spaType() {
-  return document.getElementById('spaConfig').value; // 'none','internal','external_grade','external_raised'
+  return document.getElementById('spaConfig').value; // 'none','internal_grade','internal_raised','external_grade','external_raised'
 }
 
 function enforceRules() {
@@ -961,11 +962,19 @@ function enforceRules() {
 
   // Spa conditional panels
   const spa = spaType();
+  const isInternal = spa === 'internal_grade' || spa === 'internal_raised';
   const isExternal = spa === 'external_grade' || spa === 'external_raised';
-  document.getElementById('cond-spa-internal').classList.toggle('visible', spa === 'internal');
+  document.getElementById('cond-spa-internal').classList.toggle('visible', isInternal);
   document.getElementById('cond-spa-external').classList.toggle('visible', isExternal);
   document.getElementById('cond-spa-raised').classList.toggle('visible', spa === 'external_raised');
   document.getElementById('cond-spa-spillover').classList.toggle('visible', isExternal && document.getElementById('spaSpillover').value !== 'none');
+  // Dam wall height: disabled for internal on-grade, enabled for internal raised
+  const damHeightEl = document.getElementById('spaDamHeight');
+  if (damHeightEl) {
+    damHeightEl.disabled = spa === 'internal_grade';
+    damHeightEl.style.opacity = spa === 'internal_grade' ? '0.4' : '1';
+    if (spa === 'internal_grade') damHeightEl.value = '';
+  }
 
   // Planter conditional panel
   document.getElementById('cond-planter').classList.toggle('visible', ch('optPlanter'));
@@ -1041,11 +1050,13 @@ function recalc() {
   // Spa configuration
   const spa = spaType();
   const spaActive = spa !== 'none';
-  const spaPerim = (spa === 'external_grade' || spa === 'external_raised') ? v('spaPerimeter') : 0;
-  const allSpaPerim = spa === 'internal' ? v('spaPerimeterInternal') : spaPerim;
-  const spaGal = (spa === 'external_grade' || spa === 'external_raised') ? v('spaGallons') : 0;
-  const damWallLen = spa === 'internal' ? v('spaDamWall') : 0;
-  const damWallHt = spa === 'internal' ? (v('spaDamHeight') || 2) : 0;
+  const isInternal = spa === 'internal_grade' || spa === 'internal_raised';
+  const isExternal = spa === 'external_grade' || spa === 'external_raised';
+  const spaPerim = isExternal ? v('spaPerimeter') : 0;
+  const allSpaPerim = isInternal ? v('spaPerimeterInternal') : spaPerim;
+  const spaGal = isExternal ? v('spaGallons') : 0;
+  const damWallLen = isInternal ? v('spaDamWall') : 0;
+  const damWallHt = spa === 'internal_raised' ? (v('spaDamHeight') || 2) : 0;
   // Cover vault dimensions (auto cover)
   const hasVault = ch('optAutoCover');
   const vaultLen = hasVault ? v('vaultLength') : 0;
@@ -1062,7 +1073,7 @@ function recalc() {
   }
 
   // Spillover: always 1ft tall (12" wall thickness). Open removes coping; covered keeps coping.
-  const spilloverType = (spa === 'external_grade' || spa === 'external_raised') ? document.getElementById('spaSpillover').value : 'none';
+  const spilloverType = isExternal ? document.getElementById('spaSpillover').value : 'none';
   const hasSpillover = spilloverType !== 'none';
   const spilloverLen = hasSpillover ? v('spaSpilloverLen') : 0;
   const spilloverSqft = spilloverLen; // length × 1 ft = length
@@ -1082,81 +1093,81 @@ function recalc() {
   const lines = [];
 
   // 1. Site Prep
-  lines.push({ id: 'site_geotech', cat: 'Site Prep', item: 'Geotechnical Analysis', cost: s('geotech') });
-  lines.push({ id: 'site_excavation', cat: 'Site Prep', item: 'Excavation', cost: s('excavation') });
-  lines.push({ id: 'site_forming', cat: 'Site Prep', item: 'Forming Labor/Mat', cost: s('forming') });
+  lines.push({ id: 'site_geotech', cat: 'Permitting & Engineering', item: 'Geotechnical Analysis', cost: s('geotech') });
   const permitKey = 'permit_' + (city === 'stgeorge' ? 'stgeorge' : city === 'washington' ? 'washington' : city === 'hurricane' ? 'hurricane' : city === 'ivins' ? 'ivins' : city === 'santaclara' ? 'santaclara' : 'other');
-  lines.push({ id: 'site_permits', cat: 'Site Prep', item: 'Permits & Fees', cost: s(permitKey) });
-  if (s('generalCond') > 0) lines.push({ id: 'site_generalcond', cat: 'Site Prep', item: 'General Conditions', cost: s('generalCond') });
+  lines.push({ id: 'site_permits', cat: 'Permitting & Engineering', item: 'Permits & Fees', cost: s(permitKey) });
+  lines.push({ id: 'site_excavation', cat: 'Excavation & Soil Prep', item: 'Excavation', cost: s('excavation') });
+  lines.push({ id: 'site_forming', cat: 'Excavation & Soil Prep', item: 'Forming Labor/Mat', cost: s('forming') });
+  if (s('generalCond') > 0) lines.push({ id: 'site_generalcond', cat: 'Excavation & Soil Prep', item: 'General Conditions', cost: s('generalCond') });
 
   // 2. Shell
   const rebarLF = perimeter + allSpaPerim;
   const rebarCost = rebarLF * s('rebarPerLF');
-  lines.push({ id: 'shell_rebar', cat: 'Shell', item: 'Steel / Rebar' + (rebarLF > 0 ? ' (' + rebarLF.toLocaleString() + ' lf)' : ''), cost: rebarCost });
-  lines.push({ id: 'shell_shotcrete', cat: 'Shell', item: 'Shotcrete' + (shotcreteCY > 0 ? ' (' + shotcreteCY + ' cy)' : ''), cost: shotcreteCY * s('shotcretePerCY') });
-  lines.push({ id: 'shell_detailforms', cat: 'Shell', item: 'Detail & Strip Forms', cost: s('detailForms') });
-  if (s('wateringLabor') > 0) lines.push({ id: 'shell_watering', cat: 'Shell', item: 'Watering Labor', cost: s('wateringLabor') });
-  lines.push({ id: 'shell_miracote', cat: 'Shell', item: 'Miracote Densifier', cost: s('miracote') });
+  lines.push({ id: 'shell_rebar', cat: 'Pool Shell & Structure', item: 'Steel / Rebar' + (rebarLF > 0 ? ' (' + rebarLF.toLocaleString() + ' lf)' : ''), cost: rebarCost });
+  lines.push({ id: 'shell_shotcrete', cat: 'Pool Shell & Structure', item: 'Shotcrete' + (shotcreteCY > 0 ? ' (' + shotcreteCY + ' cy)' : ''), cost: shotcreteCY * s('shotcretePerCY') });
+  lines.push({ id: 'shell_detailforms', cat: 'Pool Shell & Structure', item: 'Detail & Strip Forms', cost: s('detailForms') });
+  if (s('wateringLabor') > 0) lines.push({ id: 'shell_watering', cat: 'Pool Shell & Structure', item: 'Watering Labor', cost: s('wateringLabor') });
+  lines.push({ id: 'shell_miracote', cat: 'Pool Shell & Structure', item: 'Miracote Densifier', cost: s('miracote') });
 
   // 3. Plumbing
-  lines.push({ id: 'plumb_base', cat: 'Plumbing', item: 'Underground Plumbing — Base Pool', cost: s('plumbBase') });
+  lines.push({ id: 'plumb_base', cat: 'Rough Plumbing & Equipment', item: 'Underground Plumbing — Base Pool', cost: s('plumbBase') });
   if (spaActive) {
-    lines.push({ id: 'plumb_spa', cat: 'Plumbing', item: 'Underground Plumbing — Spa Add-On', cost: s('plumbSpa') });
+    lines.push({ id: 'plumb_spa', cat: 'Rough Plumbing & Equipment', item: 'Underground Plumbing — Spa Add-On', cost: s('plumbSpa') });
   }
   if (sheerCount > 0) {
-    lines.push({ id: 'plumb_sheerlabor', cat: 'Plumbing', item: 'Sheer Set Labor (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerLabor') });
-    lines.push({ id: 'plumb_sheerfixtures', cat: 'Plumbing', item: 'Sheer Fixtures (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerFixture'), marginCat: 'equip' });
+    lines.push({ id: 'plumb_sheerlabor', cat: 'Rough Plumbing & Equipment', item: 'Sheer Set Labor (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerLabor') });
+    lines.push({ id: 'plumb_sheerfixtures', cat: 'Water Features', item: 'Sheer Fixtures (\u00d7' + sheerCount + ')', cost: sheerCount * s('sheerFixture'), marginCat: 'equip' });
   }
 
   // 4. Equipment
   const equipOverride = v('equipmentOverride');
   if (equipOverride > 0) {
-    lines.push({ id: 'equip_package', cat: 'Equipment', item: 'Equipment Package (Heritage Quote)', cost: equipOverride, marginCat: 'equip' });
+    lines.push({ id: 'equip_package', cat: 'Rough Plumbing & Equipment', item: 'Equipment Package (Heritage Quote)', cost: equipOverride, marginCat: 'equip' });
   } else {
-    lines.push({ id: 'equip_mainpump', cat: 'Equipment', item: 'Main Pump (3HP VS)', cost: s('mainPump'), marginCat: 'equip' });
+    lines.push({ id: 'equip_mainpump', cat: 'Rough Plumbing & Equipment', item: 'Main Pump (3HP VS)', cost: s('mainPump'), marginCat: 'equip' });
     // Aux pumps: auto = 1 per spa + 1 per water feature, or manual override
     const auxPumpAuto = (spaActive ? 1 : 0) + (ch('optWaterFeature') ? 1 : 0);
     const auxPumpOverride = document.getElementById('auxPumpCount').value;
     const auxPumpCount = auxPumpOverride !== '' ? parseInt(auxPumpOverride) || 0 : auxPumpAuto;
-    if (auxPumpCount > 0) lines.push({ id: 'equip_auxpumps', cat: 'Equipment', item: 'Auxiliary Pumps (\u00d7' + auxPumpCount + ')', cost: auxPumpCount * s('featurePump'), marginCat: 'equip' });
-    lines.push({ id: 'equip_filter', cat: 'Equipment', item: 'Filter (Cartridge)', cost: s('filter'), marginCat: 'equip' });
+    if (auxPumpCount > 0) lines.push({ id: 'equip_auxpumps', cat: 'Rough Plumbing & Equipment', item: 'Auxiliary Pumps (\u00d7' + auxPumpCount + ')', cost: auxPumpCount * s('featurePump'), marginCat: 'equip' });
+    lines.push({ id: 'equip_filter', cat: 'Rough Plumbing & Equipment', item: 'Filter (Cartridge)', cost: s('filter'), marginCat: 'equip' });
     if (spaActive) {
-      lines.push({ id: 'equip_heater', cat: 'Equipment', item: 'Heater (400k BTU)', cost: s('heater'), marginCat: 'equip' });
+      lines.push({ id: 'equip_heater', cat: 'Rough Plumbing & Equipment', item: 'Heater (400k BTU)', cost: s('heater'), marginCat: 'equip' });
     }
-    if (ch('optSalt')) lines.push({ id: 'equip_salt', cat: 'Equipment', item: 'Salt Chlorinator', cost: s('saltCell'), marginCat: 'equip' });
-    if (ch('optAutomation')) lines.push({ id: 'equip_automation', cat: 'Equipment', item: 'Automation / IntelliCenter', cost: s('automation'), marginCat: 'equip' });
-    if (valveCount > 0) lines.push({ id: 'equip_valve3way', cat: 'Equipment', item: '3-Way Valves/Actuators (\u00d7' + valveCount + ')', cost: valveCount * s('valve'), marginCat: 'equip' });
-    if (sheerCount > 0) lines.push({ id: 'equip_valve2way', cat: 'Equipment', item: '2-Way Valves (\u00d7' + sheerCount + ')', cost: sheerCount * s('valve2way'), marginCat: 'equip' });
+    if (ch('optSalt')) lines.push({ id: 'equip_salt', cat: 'Rough Plumbing & Equipment', item: 'Salt Chlorinator', cost: s('saltCell'), marginCat: 'equip' });
+    if (ch('optAutomation')) lines.push({ id: 'equip_automation', cat: 'Rough Plumbing & Equipment', item: 'Automation / IntelliCenter', cost: s('automation'), marginCat: 'equip' });
+    if (valveCount > 0) lines.push({ id: 'equip_valve3way', cat: 'Rough Plumbing & Equipment', item: '3-Way Valves/Actuators (\u00d7' + valveCount + ')', cost: valveCount * s('valve'), marginCat: 'equip' });
+    if (sheerCount > 0) lines.push({ id: 'equip_valve2way', cat: 'Rough Plumbing & Equipment', item: '2-Way Valves (\u00d7' + sheerCount + ')', cost: sheerCount * s('valve2way'), marginCat: 'equip' });
   }
   if (lightCount > 0) {
-    lines.push({ id: 'equip_lights', cat: 'Equipment', item: 'MicroBrite Lights (\u00d7' + lightCount + ')', cost: lightCount * s('lightEach'), marginCat: 'equip' });
-    lines.push({ id: 'equip_transformer', cat: 'Equipment', item: 'Transformer', cost: s('transformer'), marginCat: 'equip' });
+    lines.push({ id: 'equip_lights', cat: 'Rough Electrical & Lighting', item: 'MicroBrite Lights (\u00d7' + lightCount + ')', cost: lightCount * s('lightEach'), marginCat: 'equip' });
+    lines.push({ id: 'equip_transformer', cat: 'Rough Electrical & Lighting', item: 'Transformer', cost: s('transformer'), marginCat: 'equip' });
   }
-  lines.push({ id: 'equip_electrical', cat: 'Equipment', item: 'Electrical Labor', cost: s('electricalLabor') });
-  if (spaActive) lines.push({ id: 'equip_gasline', cat: 'Equipment', item: 'Gas Line Sub', cost: s('gasLine') });
-  if (conduitFt > 0) lines.push({ id: 'equip_conduit', cat: 'Equipment', item: 'Conduit/Wire (' + Math.round(conduitFt) + ' ft)', cost: conduitFt * s('conduitPerFt') });
+  lines.push({ id: 'equip_electrical', cat: 'Rough Electrical & Lighting', item: 'Electrical Labor', cost: s('electricalLabor') });
+  if (spaActive) lines.push({ id: 'equip_gasline', cat: 'Rough Plumbing & Equipment', item: 'Gas Line Sub', cost: s('gasLine') });
+  if (conduitFt > 0) lines.push({ id: 'equip_conduit', cat: 'Rough Electrical & Lighting', item: 'Conduit/Wire (' + Math.round(conduitFt) + ' ft)', cost: conduitFt * s('conduitPerFt') });
 
   // 5. Tile & Coping
   const basecreteSqft = area + (spaActive ? Math.round(allSpaPerim * ((v('depthShallow') + v('depthDeep')) / 2)) : 0);
   if (basecreteSqft > 0) {
-    lines.push({ id: 'tile_basecrete', cat: 'Tile/Coping', item: 'Basecrete Waterproofing (' + basecreteSqft + ' sqft)', cost: basecreteSqft * s('basecrete') });
+    lines.push({ id: 'tile_basecrete', cat: 'Tile, Coping & Decking', item: 'Basecrete Waterproofing (' + basecreteSqft + ' sqft)', cost: basecreteSqft * s('basecrete') });
   } else {
-    lines.push({ id: 'tile_basecrete', cat: 'Tile/Coping', item: 'Basecrete Waterproofing', cost: 0 });
+    lines.push({ id: 'tile_basecrete', cat: 'Tile, Coping & Decking', item: 'Basecrete Waterproofing', cost: 0 });
   }
 
   // Waterline tile: auto-calc LF from pool perimeter + dam walls (internal spa + cover vault)
   let waterlineLF = perimeter;
-  if (spa === 'internal' && damWallLen > 0) waterlineLF += damWallLen;
+  if (isInternal && damWallLen > 0) waterlineLF += damWallLen;
   if (vaultLen > 0) waterlineLF += vaultLen;
   if (waterlineLF > 0) {
-    lines.push({ id: 'tile_waterline_mat', cat: 'Tile/Coping', item: 'Waterline Tile Material (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileMat'), marginCat: 'tile' });
-    lines.push({ id: 'tile_waterline_labor', cat: 'Tile/Coping', item: 'Waterline Tile Labor (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileLabor') });
+    lines.push({ id: 'tile_waterline_mat', cat: 'Tile, Coping & Decking', item: 'Waterline Tile Material (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileMat'), marginCat: 'tile' });
+    lines.push({ id: 'tile_waterline_labor', cat: 'Tile, Coping & Decking', item: 'Waterline Tile Labor (' + Math.round(waterlineLF) + ' lf)', cost: waterlineLF * s('waterlineTileLabor') });
   }
 
   // Other tile (sqft): dam wall face, spillover
   let otherTileSqft = 0;
   const otherTileParts = [];
-  if (spa === 'internal' && damWallLen > 0) {
+  if (isInternal && damWallLen > 0) {
     const damTileSqft = Math.round(damWallLen * damWallHt);
     otherTileSqft += damTileSqft;
     otherTileParts.push('dam wall ' + damTileSqft);
@@ -1167,8 +1178,8 @@ function recalc() {
   }
   if (otherTileSqft > 0) {
     const otherTileDesc = ' (' + otherTileParts.join(' + ') + ' = ' + otherTileSqft + ' sqft)';
-    lines.push({ id: 'tile_other_mat', cat: 'Tile/Coping', item: 'Other Tile Material' + otherTileDesc, cost: otherTileSqft * s('otherTileMat'), marginCat: 'tile' });
-    lines.push({ id: 'tile_other_labor', cat: 'Tile/Coping', item: 'Other Tile Labor' + otherTileDesc, cost: otherTileSqft * s('otherTileLabor') });
+    lines.push({ id: 'tile_other_mat', cat: 'Tile, Coping & Decking', item: 'Other Tile Material' + otherTileDesc, cost: otherTileSqft * s('otherTileMat'), marginCat: 'tile' });
+    lines.push({ id: 'tile_other_labor', cat: 'Tile, Coping & Decking', item: 'Other Tile Labor' + otherTileDesc, cost: otherTileSqft * s('otherTileLabor') });
   }
 
   // Veneer (sqft): raised spa, planter, etc.
@@ -1185,8 +1196,8 @@ function recalc() {
   }
   if (veneerSqft > 0) {
     const veneerDesc = ' (' + veneerParts.join(' + ') + ' = ' + veneerSqft + ' sqft)';
-    lines.push({ id: 'tile_veneer_mat', cat: 'Tile/Coping', item: 'Veneer Material' + veneerDesc, cost: veneerSqft * s('veneerMat'), marginCat: 'tile' });
-    lines.push({ id: 'tile_veneer_labor', cat: 'Tile/Coping', item: 'Veneer Installation' + veneerDesc, cost: veneerSqft * s('veneerLabor') });
+    lines.push({ id: 'tile_veneer_mat', cat: 'Tile, Coping & Decking', item: 'Veneer Material' + veneerDesc, cost: veneerSqft * s('veneerMat'), marginCat: 'tile' });
+    lines.push({ id: 'tile_veneer_labor', cat: 'Tile, Coping & Decking', item: 'Veneer Installation' + veneerDesc, cost: veneerSqft * s('veneerLabor') });
   }
 
   // Coping: pool + spa + vault (3 exposed sides) − spillover deduction
@@ -1204,33 +1215,33 @@ function recalc() {
     copingLabel = parts.length > 1 ? ' (' + parts.join(' + ') + ' = ' + copingPerimeter + ' lf)' : ' (' + copingPerimeter + ' lf)';
   }
   if (copingType === 'pourinplace') {
-    lines.push({ id: 'tile_coping_pip', cat: 'Tile/Coping', item: 'Coping — Pour-in-Place' + copingLabel, cost: copingPerimeter * s('copingPIP') });
+    lines.push({ id: 'tile_coping_pip', cat: 'Tile, Coping & Decking', item: 'Coping — Pour-in-Place' + copingLabel, cost: copingPerimeter * s('copingPIP') });
   } else if (copingType === 'stone' || copingType === 'paver') {
     const stoneMatLF = v('copingStoneLF') || s('copingStoneMat');
-    lines.push({ id: 'tile_coping_mat', cat: 'Tile/Coping', item: 'Coping Material' + copingLabel, cost: copingPerimeter * stoneMatLF, marginCat: 'tile' });
-    lines.push({ id: 'tile_coping_labor', cat: 'Tile/Coping', item: 'Coping Install Labor' + copingLabel, cost: copingPerimeter * s('copingStoneLabor') });
+    lines.push({ id: 'tile_coping_mat', cat: 'Tile, Coping & Decking', item: 'Coping Material' + copingLabel, cost: copingPerimeter * stoneMatLF, marginCat: 'tile' });
+    lines.push({ id: 'tile_coping_labor', cat: 'Tile, Coping & Decking', item: 'Coping Install Labor' + copingLabel, cost: copingPerimeter * s('copingStoneLabor') });
   }
 
   // 6. Decking
   const deckType = document.getElementById('deckingType').value;
   const deckSqft = v('deckSqft');
   if (deckType === 'concrete' && deckSqft > 0) {
-    lines.push({ id: 'deck_concrete', cat: 'Decking', item: 'Concrete Decking (' + deckSqft + ' sqft)', cost: deckSqft * s('deckConcrete') });
+    lines.push({ id: 'deck_concrete', cat: 'Tile, Coping & Decking', item: 'Concrete Decking (' + deckSqft + ' sqft)', cost: deckSqft * s('deckConcrete') });
   } else if (deckType === 'pavers' && deckSqft > 0) {
-    lines.push({ id: 'deck_pavers', cat: 'Decking', item: 'Paver Decking (' + deckSqft + ' sqft)', cost: deckSqft * s('deckPaver') });
+    lines.push({ id: 'deck_pavers', cat: 'Tile, Coping & Decking', item: 'Paver Decking (' + deckSqft + ' sqft)', cost: deckSqft * s('deckPaver') });
   } else if (deckType === 'flagstone' && deckSqft > 0) {
-    lines.push({ id: 'deck_flagstone', cat: 'Decking', item: 'Flagstone Pavers (' + deckSqft + ' sqft)', cost: deckSqft * s('deckFlagstone') });
+    lines.push({ id: 'deck_flagstone', cat: 'Tile, Coping & Decking', item: 'Flagstone Pavers (' + deckSqft + ' sqft)', cost: deckSqft * s('deckFlagstone') });
   }
 
   // 7. Auto Cover
   if (ch('optAutoCover')) {
-    lines.push({ id: 'cover_autocover', cat: 'Auto Cover', item: 'Automatic Cover (Cover Care)', cost: s('autoCover'), marginCat: 'equip' });
+    lines.push({ id: 'cover_autocover', cat: 'Water Features', item: 'Automatic Cover (Cover Care)', cost: s('autoCover'), marginCat: 'equip' });
     if (vaultLen > 0) {
       if (vaultLidType === 'pourinplace') {
-        lines.push({ id: 'cover_lid_pip', cat: 'Auto Cover', item: 'Vault Lid — Pour-in-Place (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidPIP') });
+        lines.push({ id: 'cover_lid_pip', cat: 'Water Features', item: 'Vault Lid — Pour-in-Place (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidPIP') });
       } else if (vaultLidType === 'stone') {
-        lines.push({ id: 'cover_lid_stone_mat', cat: 'Auto Cover', item: 'Vault Lid — Stone Material (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidStoneMat'), marginCat: 'tile' });
-        lines.push({ id: 'cover_lid_stone_labor', cat: 'Auto Cover', item: 'Vault Lid — Stone Install (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidStoneLabor') });
+        lines.push({ id: 'cover_lid_stone_mat', cat: 'Water Features', item: 'Vault Lid — Stone Material (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidStoneMat'), marginCat: 'tile' });
+        lines.push({ id: 'cover_lid_stone_labor', cat: 'Water Features', item: 'Vault Lid — Stone Install (' + vaultLen + ' lf)', cost: vaultLen * s('vaultLidStoneLabor') });
       }
     }
   }
@@ -1247,25 +1258,25 @@ function recalc() {
   const finishCostPerLF = s('finish_' + finishType);
   const finishDepthSurcharge = s('finishDepth_' + finishType);
   if (interiorLF > 0) {
-    lines.push({ id: 'interior_finish', cat: 'Interior', item: finishName + ' (' + interiorLF + ' lf)', cost: interiorLF * finishCostPerLF });
+    lines.push({ id: 'interior_finish', cat: 'Plastering / Interior Finish', item: finishName + ' (' + interiorLF + ' lf)', cost: interiorLF * finishCostPerLF });
   }
   const deepFt = Math.max(0, (v('depthDeep') || 0) - 6);
   if (deepFt > 0 && finishDepthSurcharge > 0) {
-    lines.push({ id: 'interior_depth', cat: 'Interior', item: 'Depth Surcharge — ' + finishName + ' (' + deepFt + ' ft over 6\')', cost: deepFt * finishDepthSurcharge });
+    lines.push({ id: 'interior_depth', cat: 'Plastering / Interior Finish', item: 'Depth Surcharge — ' + finishName + ' (' + deepFt + ' ft over 6\')', cost: deepFt * finishDepthSurcharge });
   }
   // Finish enhancements
   if (ch('optPlasterDye') && interiorLF > 0) {
-    lines.push({ id: 'interior_dye', cat: 'Interior', item: 'Plaster Dye (' + interiorLF + ' lf)', cost: interiorLF * s('finish_dye') });
+    lines.push({ id: 'interior_dye', cat: 'Plastering / Interior Finish', item: 'Plaster Dye (' + interiorLF + ' lf)', cost: interiorLF * s('finish_dye') });
   }
   if (ch('optGlassSeeding')) {
-    lines.push({ id: 'interior_glass', cat: 'Interior', item: 'Glass Seeding', cost: s('finish_glass') });
+    lines.push({ id: 'interior_glass', cat: 'Plastering / Interior Finish', item: 'Glass Seeding', cost: s('finish_glass') });
   }
   if (ch('optAbalone') && interiorLF > 0) {
-    lines.push({ id: 'interior_abalone', cat: 'Interior', item: 'Abalone Seeding (' + interiorLF + ' lf)', cost: interiorLF * s('finish_abalone') });
+    lines.push({ id: 'interior_abalone', cat: 'Plastering / Interior Finish', item: 'Abalone Seeding (' + interiorLF + ' lf)', cost: interiorLF * s('finish_abalone') });
   }
 
   // 9. Startup
-  lines.push({ id: 'startup_prep', cat: 'Prep/Startup', item: 'Startup & Pool Prep', cost: s('startup') });
+  lines.push({ id: 'startup_prep', cat: 'Site Cleanup & Punch', item: 'Startup & Pool Prep', cost: s('startup') });
 
   // ---- Calculate totals with margin ----
   const globalMargin = v('marginSlider') / 100;
@@ -1277,7 +1288,7 @@ function recalc() {
 
   // Group by category for display
   const cats = {};
-  const catOrder = ['Site Prep', 'Shell', 'Plumbing', 'Equipment', 'Tile/Coping', 'Decking', 'Auto Cover', 'Interior', 'Other', 'Prep/Startup'];
+  const catOrder = ['Permitting & Engineering', 'Excavation & Soil Prep', 'Pool Shell & Structure', 'Rough Plumbing & Equipment', 'Rough Electrical & Lighting', 'Tile, Coping & Decking', 'Water Features', 'Plastering / Interior Finish', 'Site Cleanup & Punch'];
 
   lines.forEach(line => {
     const calcCost = Math.round(line.cost || 0);
@@ -1527,7 +1538,7 @@ function parseTakeoff(text) {
     // Dam wall indicates internal spa
     const damWall = extract(/Dam Wall:\s*(.+?)(?=\s*Spillover|\s*Steps|\s*Lights|\s*$)/, spaText);
     if (damWall) {
-      data.spaType = 'internal';
+      data.spaType = 'internal_raised';
       // Parse dam wall length from the longest segment, e.g. "+12\" 13'" → 13'
       const damSegments = damWall.match(/\+\d+"?\s*([\d'"\s]+)/g) || [];
       let maxLen = 0;
@@ -1644,8 +1655,8 @@ function applyTakeoffData(data) {
   // Spa configuration
   if (data.hasSpa) {
     const spaConfig = document.getElementById('spaConfig');
-    if (data.spaType === 'internal') {
-      spaConfig.value = 'internal';
+    if (data.spaType === 'internal_raised') {
+      spaConfig.value = 'internal_raised';
       if (data.spaPerimeter) document.getElementById('spaPerimeterInternal').value = Math.round(data.spaPerimeter);
       if (data.damWallLen) document.getElementById('spaDamWall').value = Math.round(data.damWallLen);
     } else if (data.spaType === 'external_raised') {
@@ -1745,7 +1756,9 @@ function loadQuoteData(data) {
   }
   // Spa config
   if (data.spaConfig) {
-    document.getElementById('spaConfig').value = data.spaConfig;
+    // Legacy: old saved quotes had 'internal' — map to 'internal_raised'
+    const spaVal = data.spaConfig === 'internal' ? 'internal_raised' : data.spaConfig;
+    document.getElementById('spaConfig').value = spaVal;
   } else if (data.options && data.options.optSpa) {
     // Legacy: old saved quotes had optSpa boolean — map to external_grade
     document.getElementById('spaConfig').value = 'external_grade';
